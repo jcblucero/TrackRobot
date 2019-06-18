@@ -1,8 +1,9 @@
 import cv2 as cv
 import numpy as np
+import math as math
 
 #Global Input Files (for testing)
-input_filename = 'InputImages/trackpic3.jpg'
+input_filename = 'InputImages/trackpic4.jpg'
 output_filename = 'OutputImages/output.jpg'
 output_folder = 'OutputImages/'
 
@@ -111,12 +112,12 @@ def FindLines(edge_img):
     min_line_length = 100
     max_line_gap = 100
 
-    lines = cv.HoughLinesP(edge_img, rho=rho_resolution, theta=theta_resolution, threshold=threshold, minLineLength=min_line_length, maxLineGap=max_line_gap)
-    #lines = cv.HoughLines(edge_img,rho_resolution,theta_resolution,threshold)    
+    #lines = cv.HoughLinesP(edge_img, rho=rho_resolution, theta=theta_resolution, threshold=threshold, minLineLength=min_line_length, maxLineGap=max_line_gap)
+    lines = cv.HoughLines(edge_img,rho_resolution,theta_resolution,threshold)    
 
     return lines
 
-def DrawLines(img):
+def DrawLinesThetaRho(img,lines):
     red = [0,0,255]
     width = 3
     
@@ -126,6 +127,34 @@ def DrawLines(img):
 
     print("Lines Shape:")
     print(lines.shape)
+    max_lines_to_print = 2
+    count = 0
+    for line in lines:
+        print("Line #{}".format(count) )
+        count += 1
+        ##Adapted from OpenCv HoughLines Tutorial
+        rho = line[0][0]
+        theta = line[0][1]
+        print("Theta {}, Rho {}".format(theta,rho) )
+        a = math.cos(theta)
+        b = math.sin(theta)
+        x0 = a*rho
+        y0 = b*rho
+        pt1 = ( int(x0 + 5000*(-b)), int(y0 + 5000*(a)) )
+        pt2 = ( int(x0 - 5000*(-b)), int(y0 - 5000*(a) ))
+        cv.line( img, pt1, pt2, red, width)
+    
+def DrawLines(img,lines):
+    red = [0,0,255]
+    width = 3
+    
+    if lines is None:
+        print( "No lines found")
+        return 
+
+    print("Lines Shape:")
+    print(lines.shape)
+    max_lines_to_print = 2
     count = 0
     for line in lines:
         print("Line #{}".format(count) )
@@ -134,6 +163,9 @@ def DrawLines(img):
         pt1 = (coords[0],coords[1])
         pt2 = (coords[2],coords[3])
         cv.line(img, pt1, pt2, red, width)
+        if(count == max_lines_to_print):
+            break
+        
 
 if __name__ == "__main__":
     #RunCannyTuningWindow(img_gray)
@@ -142,5 +174,6 @@ if __name__ == "__main__":
     #Line detection and drawing
     line_img = np.copy(img)
     lines = FindLines(edges)
-    DrawLines(line_img)
+    #DrawLines(line_img)
+    DrawLinesThetaRho(line_img,lines)
     cv.imwrite(output_folder + "line_img.jpg",line_img)
