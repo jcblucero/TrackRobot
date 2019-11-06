@@ -3,7 +3,7 @@ import numpy as np
 import math as math
 
 #Global Input Files (for testing)
-input_filename = 'InputImages/trackpic3.jpg'
+input_filename = 'InputImages/trackpic14.jpg'
 output_filename = 'OutputImages/output.jpg'
 output_folder = 'OutputImages/'
 
@@ -112,8 +112,8 @@ def FindLines(edge_img):
     min_line_length = 100
     max_line_gap = 100
 
-    lines = cv.HoughLinesP(edge_img, rho=rho_resolution, theta=theta_resolution, threshold=threshold, minLineLength=min_line_length, maxLineGap=max_line_gap)
-    #lines = cv.HoughLines(edge_img,rho_resolution,theta_resolution,threshold)    
+    #lines = cv.HoughLinesP(edge_img, rho=rho_resolution, theta=theta_resolution, threshold=threshold, minLineLength=min_line_length, maxLineGap=max_line_gap)
+    lines = cv.HoughLines(edge_img,rho_resolution,theta_resolution,threshold)    
 
     return lines
 
@@ -154,6 +154,34 @@ def DrawLinesThetaRho(img,lines):
         pt1 = ( int(x0 + 5000*(-b)), int(y0 + 5000*(a)) )
         pt2 = ( int(x0 - 5000*(-b)), int(y0 - 5000*(a) ))
         cv.line( img, pt1, pt2, red, width)
+
+    #####
+    # Xcos(theta) + Ysin(theta) = r
+    matrix_shape = (lines.shape[0],lines.shape[2])
+    print (lines.reshape(matrix_shape))
+    clustering_lines = lines.reshape(matrix_shape)
+    
+    #kmeans clustering
+    criteria = (cv.TERM_CRITERIA_MAX_ITER, 10, 0.001)
+    clustering_lines = np.float32(clustering_lines)
+    ret,label,centers=cv.kmeans(clustering_lines,2,None,criteria,10,cv.KMEANS_RANDOM_CENTERS)
+    print("KMeans Centers -- \n{}".format(centers))
+
+    #Translate Line to points -- Y = (r-Xcos(theta)) / sin(theta)
+    line1 = centers[0]
+    rho1,theta1 = (line1[0],line1[1])
+    line2 = centers[1]
+    rho2,theta2 = (line2[0],line2[1])
+    
+    middle_x = int(img.shape[1] / 2)
+    line1_point = (middle_x, int( (rho1-(middle_x*math.cos(theta1)))/math.sin(theta1) ))
+    line2_point = (middle_x, int( (rho2-(middle_x*math.cos(theta2)))/math.sin(theta2) ))
+    blue = [255,0,0]
+    print("line1_point")
+    print(line1_point)
+
+    cv.circle(img, line1_point, width, blue, thickness=3, lineType=8, shift=0)
+    cv.circle(img, line2_point, width, blue, thickness=3, lineType=8, shift=0)    
     
 def DrawLines(img,lines):
     red = [0,0,255]
@@ -194,9 +222,23 @@ def DrawLines(img,lines):
     #kmeans clustering
     criteria = (cv.TERM_CRITERIA_MAX_ITER, 10, 0.001)
     clustering_lines = np.float32(clustering_lines)
-    ret,label,center=cv.kmeans(clustering_lines,2,None,criteria,10,cv.KMEANS_RANDOM_CENTERS)
+    ret,label,centers=cv.kmeans(clustering_lines,2,None,criteria,10,cv.KMEANS_RANDOM_CENTERS)
 
-    print("KMeans Center -- \n{}".format(center))
+    print("KMeans Centers -- \n{}".format(centers))
+    print(img.shape)
+
+    #get line1 and line2 and calculate mid-points assuming center x
+    line1 = centers[0]
+    line2 = centers[1]
+    middle_x = int(img.shape[1] / 2)
+    line1_point = (middle_x, int(line1[0]*middle_x + line1[1]))
+    line2_point = (middle_x, int(line2[0]*middle_x + line2[1]))
+    blue = [255,0,0]
+    print("line1_point")
+    print(line1_point)
+
+    cv.circle(img, line1_point, width, blue, thickness=3, lineType=8, shift=0)
+    cv.circle(img, line2_point, width, blue, thickness=3, lineType=8, shift=0)
 
 if __name__ == "__main__":
     #RunCannyTuningWindow(img_gray)
@@ -205,6 +247,6 @@ if __name__ == "__main__":
     #Line detection and drawing
     line_img = np.copy(img)
     lines = FindLines(edges)
-    DrawLines(line_img,lines)
-    #DrawLinesThetaRho(line_img,lines)
+    #DrawLines(line_img,lines)
+    DrawLinesThetaRho(line_img,lines)
     cv.imwrite(output_folder + "line_img.jpg",line_img)
