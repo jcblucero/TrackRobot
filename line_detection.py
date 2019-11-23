@@ -3,7 +3,7 @@ import numpy as np
 import math as math
 
 #Global Input Files (for testing)
-input_filename = 'InputImages/trackpic4.jpg'
+input_filename = 'InputImages/low_res_pic_3.jpg'
 output_filename = 'OutputImages/output.jpg'
 output_folder = 'OutputImages/'
 
@@ -41,19 +41,25 @@ def RunCannyTuningWindow(img_gray):
     
     cv.createTrackbar(str_gauss_kernel_size,window_name,gauss_kernel_size,50,nothing)
     cv.createTrackbar(str_gauss_sigma,window_name,gauss_sigma,100,nothing)
-    cv.createTrackbar(str_lower_canny_thresh,window_name,lower_canny_thresh,255,nothing)
-    cv.createTrackbar(str_upper_canny_thresh,window_name,upper_canny_thresh,255,nothing)
+    cv.createTrackbar(str_lower_canny_thresh,window_name,lower_canny_thresh,400,nothing)
+    cv.createTrackbar(str_upper_canny_thresh,window_name,upper_canny_thresh,400,nothing)
     cv.createTrackbar(str_canny_kernel_size,window_name,canny_kernel_size,50,nothing)
    
     #find center of shape and work on small sectin in center
+    #Only do this for 1080/1920
     rows = img_gray.shape[0]
     cols = img_gray.shape[1]
-    center_row = int(rows/2)
-    center_col = int(cols/2)
-    w_length = 350
-    print("Rows/Cols ({},{}), Center Row/Col ({},{})".format(rows,cols,center_row,center_col))
-    img_window = img_gray[center_row-w_length:center_row+w_length,center_col-w_length:center_col+w_length]
-    
+    #print("Rows/Cols ({},{}), Center Row/Col ({},{})".format(rows,cols,center_row,center_col))
+    if(rows == 1080) and (cols == 1920):
+        center_row = int(rows/2)
+        center_col = int(cols/2)
+        w_length = 350
+        print("Rows/Cols ({},{}), Center Row/Col ({},{})".format(rows,cols,center_row,center_col))
+        img_window = img_gray[center_row-w_length:center_row+w_length,center_col-w_length:center_col+w_length]
+    else:
+        print("Rows/Cols ({},{})".format(rows,cols))
+        img_window = img_gray
+
     while(1):
         #cv.imshow(window_name,
         cv.waitKey(1000)
@@ -61,7 +67,7 @@ def RunCannyTuningWindow(img_gray):
         gauss_kernel_size = cv.getTrackbarPos(str_gauss_kernel_size,window_name)
         if (gauss_kernel_size % 2)==0:
             gauss_kernel_size += 1    
-        gauss_sigma = cv.getTrackbarPos(str_gauss_sigma,window_name) / 10
+        gauss_sigma = cv.getTrackbarPos(str_gauss_sigma,window_name) / 10.0
         lower_canny_thresh = cv.getTrackbarPos(str_lower_canny_thresh,window_name) 
         upper_canny_thresh = cv.getTrackbarPos(str_upper_canny_thresh,window_name) 
         canny_kernel_size = cv.getTrackbarPos(str_canny_kernel_size,window_name) 
@@ -70,10 +76,16 @@ def RunCannyTuningWindow(img_gray):
         gauss_kernel = (gauss_kernel_size,gauss_kernel_size)
         canny_kernel = (canny_kernel_size,canny_kernel_size)
         
-        #gauss_img = cv.GaussianBlur(img_window,gauss_kernel, gauss_sigma, gauss_sigma,cv.BORDER_REPLICATE)
-        gauss_img = cv.medianBlur(img_window,gauss_kernel_size)
-        #gauss_img = cv.blur(img_window,gauss_kernel)
-        edge_img = cv.Canny(gauss_img,lower_canny_thresh,upper_canny_thresh,canny_kernel_size)
+        #gauss_img = cv.GaussianBlur(
+            #src=img_window,ksize=gauss_kernel, sigmaX=gauss_sigma, sigmaY=gauss_sigma,\
+            #borderType=cv.BORDER_REPLICATE)
+        #gauss_img = cv.medianBlur(img_window,gauss_kernel_size)
+        gauss_img = cv.blur(
+            src=img_window,ksize=gauss_kernel,borderType=cv.BORDER_REPLICATE)
+        edge_img = cv.Canny(
+            image=gauss_img,threshold1=lower_canny_thresh,threshold2=upper_canny_thresh, \
+            apertureSize=canny_kernel_size)
+        #print(canny_kernel_size)
         #stack images so they can be displayed in one window
         horizontal_stack = np.hstack((gauss_img,edge_img)) 
         cv.imshow(window_name,horizontal_stack)
@@ -241,12 +253,12 @@ def DrawLines(img,lines):
     cv.circle(img, line2_point, width, blue, thickness=3, lineType=8, shift=0)
 
 if __name__ == "__main__":
-    #RunCannyTuningWindow(img_gray)
-    edges = CannyFilter(img_gray)
+    RunCannyTuningWindow(img_gray)
+    """edges = CannyFilter(img_gray)
     
     #Line detection and drawing
     line_img = np.copy(img)
     lines = FindLines(edges)
     #DrawLines(line_img,lines)
     DrawLinesThetaRho(line_img,lines)
-    cv.imwrite(output_folder + "line_img.jpg",line_img)
+    cv.imwrite(output_folder + "line_img.jpg",line_img)"""
