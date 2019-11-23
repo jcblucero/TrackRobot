@@ -1,12 +1,20 @@
 #Import GPIO library
 import pigpio
-import picamera
+import picamera as PiCamera
 import time
 from subprocess import call
 
 pi = None
 SIGNAL_PIN = 19
-picamera = picamera.PiCamera()
+#Sensor mode has to be explicitly set, will not automatically detect (even though docs say it will).
+#If not set, it will use default full FoV and scale to resolution
+#I suspect this means fps is slow if mode isn't set...but reported framerate is still 60 so not sure
+#TODO: If framerate is issue in future, see if setting sensor_mode has an affect (lowers field of view)
+picamera = PiCamera.PiCamera(resolution=(640,480), framerate=60.0)
+#picamera = picamera.PiCamera(sensor_mode=6)
+
+picamera.framerate = 60.0
+print("CameraFramerate {}".format(picamera.framerate))
 
 def PrintInitError():
     print("Error: servo_motor.py is not initialized. Call servo_motor.Init() to init, and servo_motor.DeInit() when finished")
@@ -40,8 +48,8 @@ def CapturePicture():
     global picture_count
     picture_count += 1
     print("picture taken: {}".format(picture_count))
-    picamera.capture('trackpic{}.jpg'.format(picture_count))
-    picamera.start_recording('trackvid{}.h264'.format(picture_count))
+    picamera.capture('low_res_pic_{}.jpg'.format(picture_count))
+    picamera.start_recording('low_res_vid_{}.h264'.format(picture_count))
     time.sleep(4)
     picamera.stop_recording()
                              
