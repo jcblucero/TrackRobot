@@ -3,7 +3,7 @@ import numpy as np
 import math as math
 
 #Global Input Files (for testing)
-input_filename = 'InputImages/trackpic14.jpg'
+input_filename = 'InputImages/trackpic4.jpg'
 output_filename = 'OutputImages/output.jpg'
 output_folder = 'OutputImages/'
 
