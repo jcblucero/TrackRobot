@@ -3,7 +3,7 @@ import numpy as np
 import math as math
 
 #Global Input Files (for testing)
-input_filename = 'InputImages/low_res_pic_3.jpg'
+input_filename = 'InputImages/low_res_pic_14.jpg'
 output_filename = 'OutputImages/output.jpg'
 output_folder = 'OutputImages/'
 
@@ -166,16 +166,16 @@ def FilterPipeline(img_gray):
 
 #Outputs Houghlines tuned for 320x240 image
 def FindLines_320_240(edge_img):
-    rho_resolution = 1 #distance resultion of accumulator in pixels
-    theta_resolution = np.pi / 30 #angle resulotion of accumulator in rads
+    rho_resolution = 1 #distance resolution of accumulator in pixels
+    theta_resolution = np.pi / 180 #angle resolution of accumulator in rads
     threshold = 50 #only return lines with greater number of votes
 
     #for HoughLInesP
-    min_line_length = 100
-    max_line_gap = 100
+    min_line_length = 50#100
+    max_line_gap = 50#100
 
-    #lines = cv.HoughLinesP(edge_img, rho=rho_resolution, theta=theta_resolution, threshold=threshold, minLineLength=min_line_length, maxLineGap=max_line_gap)
-    lines = cv.HoughLines(edge_img,rho_resolution,theta_resolution,threshold)    
+    lines = cv.HoughLinesP(edge_img, rho=rho_resolution, theta=theta_resolution, threshold=threshold, minLineLength=min_line_length, maxLineGap=max_line_gap)
+    #lines = cv.HoughLines(edge_img,rho_resolution,theta_resolution,threshold)#,min_theta=0,max_theta=2*np.pi)    
 
     return lines
 
@@ -257,15 +257,42 @@ def DrawLinesThetaRho(img,lines):
     matrix_shape = (lines.shape[0],lines.shape[2])
     print (lines.reshape(matrix_shape))
     clustering_lines = lines.reshape(matrix_shape)
+    print ("clustering_Lines shape {}".format(clustering_lines.shape))
+
+    #Filter lines that are too horizontal (60-120deg, +-30deg of 90 which is horizontal)
+    lower_angle_threshold = 60 * np.pi/180
+    upper_angle_threshold = 120 * np.pi/180
+
+    selection_array = (clustering_lines[:,1] <= lower_angle_threshold) | (clustering_lines[:,1] >= upper_angle_threshold)
+    clustering_lines = clustering_lines[selection_array] 
+    print (clustering_lines)
+
+    #Convert to x/y form using sin/cos to avoid discontinuities in (theta 0-2pi, and rho negative distance)
+    xy_clustering = np.copy(clustering_lines)
+    xy_clustering[:,0] = np.sin(clustering_lines[:,1]) * clustering_lines[:,0] #y's = sin(theta) * rho
+    xy_clustering[:,1] = np.cos(clustering_lines[:,1]) * clustering_lines[:,0] #x's = cos(theta) * rho
     
+    #kmeans clustering
+    criteria = (cv.TERM_CRITERIA_MAX_ITER, 10, 0.001)
+    xy_clustering = np.float32(xy_clustering)
+    ret,label,centers_xy=cv.kmeans(xy_clustering,2,None,criteria,10,cv.KMEANS_RANDOM_CENTERS)
+
+    #convert back to theta/rho
+    centers=np.copy(centers_xy)
+    centers[:,0] = np.sqrt(centers_xy[:,0]*centers_xy[:,0] + centers_xy[:,1]*centers_xy[:,1]) #rho
+    centers[:,1] = np.arctan(centers_xy[:,0]/centers_xy[:,1])
+
+    print("KMeans Centers -- \n{}".format(centers))
+
+    """
     #kmeans clustering
     criteria = (cv.TERM_CRITERIA_MAX_ITER, 10, 0.001)
     clustering_lines = np.float32(clustering_lines)
     ret,label,centers=cv.kmeans(clustering_lines,2,None,criteria,10,cv.KMEANS_RANDOM_CENTERS)
     print("KMeans Centers -- \n{}".format(centers))
-
+    
     #Translate Line to points -- Y = (r-Xcos(theta)) / sin(theta)
-    """
+    
     line1 = centers[0]
     rho1,theta1 = (line1[0],line1[1])
     line2 = centers[1]
@@ -274,13 +301,25 @@ def DrawLinesThetaRho(img,lines):
     middle_x = int(img.shape[1] / 2)
     line1_point = (middle_x, int( (rho1-(middle_x*math.cos(theta1)))/math.sin(theta1) ))
     line2_point = (middle_x, int( (rho2-(middle_x*math.cos(theta2)))/math.sin(theta2) ))
+    """
+    #Find x's instead of y's for vertical orientation
+    #X = (r-Ysin(theta)) / cos(theta)
+    line1 = centers[0]
+    rho1,theta1 = (line1[0],line1[1])
+    line2 = centers[1]
+    rho2,theta2 = (line2[0],line2[1])
+
+    middle_y = int(img.shape[0] / 2)
+    line1_point = ( int( (rho1-(middle_y*math.sin(theta1)))/math.cos(theta1) ), middle_y)
+    line2_point = ( int( (rho2-(middle_y*math.sin(theta2)))/math.cos(theta2) ), middle_y)
+
     blue = [255,0,0]
     print("line1_point")
     print(line1_point)
 
     cv.circle(img, line1_point, width, blue, thickness=3, lineType=8, shift=0)
     cv.circle(img, line2_point, width, blue, thickness=3, lineType=8, shift=0)
-    """    
+        
     
 def DrawLines(img,lines):
     red = [0,0,255]
@@ -317,6 +356,17 @@ def DrawLines(img,lines):
         #    break
     ############################
     print(clustering_lines)
+    
+    #Filter lines that are too horizontal (+-30deg of 0 which is horizontal)
+    #tan(theta) = opp/adj -> rise/run -> slope. tan(theta) == slope
+    lower_angle_threshold = np.tan(30 * np.pi/180)
+    upper_angle_threshold = np.tan(-30 * np.pi/180)
+
+    selection_array = (clustering_lines[:,0] >= lower_angle_threshold) | (clustering_lines[:,0] <= upper_angle_threshold)
+    clustering_lines = clustering_lines[selection_array] 
+    print ("filtered clustering lines")
+    print (clustering_lines)
+
 
     #kmeans clustering
     criteria = (cv.TERM_CRITERIA_MAX_ITER, 10, 0.001)
@@ -329,9 +379,16 @@ def DrawLines(img,lines):
     #get line1 and line2 and calculate mid-points assuming center x
     line1 = centers[0]
     line2 = centers[1]
+    #actually doing middle y (to get x) because orientation is vertical now
+    """
     middle_x = int(img.shape[1] / 2)
     line1_point = (middle_x, int(line1[0]*middle_x + line1[1]))
     line2_point = (middle_x, int(line2[0]*middle_x + line2[1]))
+    """
+    #x = (y-b) / m
+    middle_y = int(img.shape[0] / 2)
+    line1_point = (int( (middle_y-line1[1])/line1[0]), middle_y)
+    line2_point = (int( (middle_y-line2[1])/line2[0]), middle_y)
     blue = [255,0,0]
     print("line1_point")
     print(line1_point)
@@ -360,8 +417,8 @@ if __name__ == "__main__":
     #Line detection and drawing
     line_img = np.copy(downsampled_orig)
     lines = FindLines_320_240(edges)
-    #DrawLines(line_img,lines)
-    DrawLinesThetaRho(line_img,lines)
+    DrawLines(line_img,lines)
+    #DrawLinesThetaRho(line_img,lines)
     cv.imwrite(output_folder + "line_img.jpg",line_img)
 
 
