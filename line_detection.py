@@ -1,6 +1,7 @@
 import cv2 as cv
 import numpy as np
 import math as math
+import time
 
 #Global Input Files (for testing)
 input_filename = 'InputImages/low_res_pic_14.jpg'
@@ -9,6 +10,9 @@ output_folder = 'OutputImages/'
 
 img = cv.imread(input_filename)
 cv.imwrite(output_filename,img)
+
+#Colors for drawing on image
+green = [0,255,0]
 
 #Canny edge detection
 img_gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
@@ -174,10 +178,16 @@ def FindLines_320_240(edge_img):
     min_line_length = 50#100
     max_line_gap = 50#100
 
-    lines = cv.HoughLinesP(edge_img, rho=rho_resolution, theta=theta_resolution, threshold=threshold, minLineLength=min_line_length, maxLineGap=max_line_gap)
-    #lines = cv.HoughLines(edge_img,rho_resolution,theta_resolution,threshold)#,min_theta=0,max_theta=2*np.pi)    
+    #lines = cv.HoughLinesP(edge_img, rho=rho_resolution, theta=theta_resolution, threshold=threshold, minLineLength=min_line_length, maxLineGap=max_line_gap)
+    lines = cv.HoughLines(edge_img,rho_resolution,theta_resolution,threshold)#,min_theta=0,max_theta=2*np.pi)    
 
     return lines
+
+#Finds the center of two (x,y) points and returns (x,y) as integers
+def FindCenter(pt1,pt2):
+    center_x = int(pt1[0] + pt2[0] / 2)
+    center_y = int(pt1[1] + pt2[1] / 2)
+    return (center_x,center_y)
 
 def CannyFilter(img_gray):
     kernel_size = 15
@@ -313,6 +323,11 @@ def DrawLinesThetaRho(img,lines):
     line1_point = ( int( (rho1-(middle_y*math.sin(theta1)))/math.cos(theta1) ), middle_y)
     line2_point = ( int( (rho2-(middle_y*math.sin(theta2)))/math.cos(theta2) ), middle_y)
 
+    center_point = FindCenter(line1_point,line2_point)
+    cv.circle(img, center_point, width, green, thickness=3, lineType=8, shift=0)
+
+    CalculateScaledTrajectoryError(center_point, img.shape)
+
     blue = [255,0,0]
     print("line1_point")
     print(line1_point)
@@ -396,6 +411,36 @@ def DrawLines(img,lines):
     cv.circle(img, line1_point, width, blue, thickness=3, lineType=8, shift=0)
     cv.circle(img, line2_point, width, blue, thickness=3, lineType=8, shift=0)
 
+#Calculate the raw error which will eventually be used by PID controller for steering
+#left/right steering only, so only 1d input
+def CalculateRawError(measured, desired):
+    return desired - measured
+
+#Calculate the error which will be used to feed PID controller for steering
+#We use a scaled error between [-100.0,100.0] (float) so that PID is impartial to viewing dimensions
+#Inputs: center_point - (x,y) pair  - center of lines found through line detection
+#       image_dimensions - tuple - dimensions of image fed by camera to line detection
+#Outputs: Float between [-100.0,100.0] representing error. (negative means you are left)
+def CalculateScaledTrajectoryError( center_point, image_dimensions):
+    
+    print("Image Dimensions {}".format(image_dimensions))
+
+    #We care about lateral error,since we are only steering left/right.
+    #This means x direction (columns) of image
+    measured_value = center_point[0] #x index is 0
+    desired_value = int(image_dimensions[1] / 2) #TODO: check this index
+    max_error = desired_value #TODO: check this index
+
+    raw_error = float(desired_value - measured_value)
+
+    scaled_error = (raw_error / max_error) * 100.0
+
+    print("Max Error = {}, Raw Error = {}, Scaled Error = {}".format(max_error, raw_error,scaled_error) )
+
+    return scaled_error
+    
+    
+
 if __name__ == "__main__":
     #RunCannyTuningWindow(img_gray)
     """#For 1920x1080 fullscale image
@@ -409,6 +454,10 @@ if __name__ == "__main__":
     cv.imwrite(output_folder + "line_img.jpg",line_img)
     """
 
+    timec1 = time.clock()
+    timet1 = time.time()
+    #timec1 = time.clock()
+
     #Current filter pipeline designed for 320x240, have to downsample mannually (future config camera)
     downsampled_orig = cv.pyrDown(src=img)
     img_gray = cv.pyrDown(src=img_gray, dst=img_gray ) #defaults to half size
@@ -417,9 +466,18 @@ if __name__ == "__main__":
     #Line detection and drawing
     line_img = np.copy(downsampled_orig)
     lines = FindLines_320_240(edges)
-    DrawLines(line_img,lines)
-    #DrawLinesThetaRho(line_img,lines)
+    #DrawLines(line_img,lines)
+    DrawLinesThetaRho(line_img,lines)
     cv.imwrite(output_folder + "line_img.jpg",line_img)
+
+    time.sleep(1)
+
+    timec2 = time.clock()
+    timet2 = time.time()
+    #timec2 = time.clock()
+
+    print(time.time(),time.clock())
+    print(timet2-timet1,timec2-timec1)
 
 
 
