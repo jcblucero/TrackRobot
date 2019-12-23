@@ -4,7 +4,7 @@ import math as math
 import time
 
 #Global Input Files (for testing)
-input_filename = 'InputImages/low_res_pic_14.jpg'
+input_filename = 'InputImages/low_res_pic_11.jpg'
 output_filename = 'OutputImages/output.jpg'
 output_folder = 'OutputImages/'
 
@@ -13,6 +13,7 @@ cv.imwrite(output_filename,img)
 
 #Colors for drawing on image
 green = [0,255,0]
+purple = [255,0,255]
 
 #Canny edge detection
 img_gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
@@ -185,8 +186,8 @@ def FindLines_320_240(edge_img):
 
 #Finds the center of two (x,y) points and returns (x,y) as integers
 def FindCenter(pt1,pt2):
-    center_x = int(pt1[0] + pt2[0] / 2)
-    center_y = int(pt1[1] + pt2[1] / 2)
+    center_x = int((pt1[0] + pt2[0]) / 2)
+    center_y = int((pt1[1] + pt2[1]) / 2)
     return (center_x,center_y)
 
 def CannyFilter(img_gray):
@@ -324,13 +325,16 @@ def DrawLinesThetaRho(img,lines):
     line2_point = ( int( (rho2-(middle_y*math.sin(theta2)))/math.cos(theta2) ), middle_y)
 
     center_point = FindCenter(line1_point,line2_point)
-    cv.circle(img, center_point, width, green, thickness=3, lineType=8, shift=0)
+    cv.circle(img, center_point, width, purple, thickness=3, lineType=8, shift=0)
 
     CalculateScaledTrajectoryError(center_point, img.shape)
 
     blue = [255,0,0]
     print("line1_point")
     print(line1_point)
+
+    print("Predicted center {}, Expected Center {}".format(center_point, (img.shape[0]/2,img.shape[1]/2) ))
+    print(center_point)
 
     cv.circle(img, line1_point, width, blue, thickness=3, lineType=8, shift=0)
     cv.circle(img, line2_point, width, blue, thickness=3, lineType=8, shift=0)
@@ -420,7 +424,7 @@ def CalculateRawError(measured, desired):
 #We use a scaled error between [-100.0,100.0] (float) so that PID is impartial to viewing dimensions
 #Inputs: center_point - (x,y) pair  - center of lines found through line detection
 #       image_dimensions - tuple - dimensions of image fed by camera to line detection
-#Outputs: Float between [-100.0,100.0] representing error. (negative means you are left)
+#Outputs: Float between [-100.0,100.0] representing error. (by convention, negative means measured center is right of image center)
 def CalculateScaledTrajectoryError( center_point, image_dimensions):
     
     print("Image Dimensions {}".format(image_dimensions))
