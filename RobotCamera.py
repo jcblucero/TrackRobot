@@ -1,8 +1,12 @@
 #
+# This module is made to interact with raspberry pi camera V2 HW
+#   Initializes camera to desired mode and settings
+#   Provides mechanism to return camera image as numpy array
+#   
+# Current Config: Resolution 320x240p, Framerate=40fps, sensor mode 4 (full Field of View)
+# Output is 1d np array of uint8 in grayscale
 #
-#
-#
-#
+# TODO: provide different configuration settings (color output, image size, etc)
 
 import cv2 as cv
 import numpy as np
@@ -54,9 +58,7 @@ class CameraBuffer(object):
     def flush(self):
         pass
 
-        
-#Test harness for checking camera by itself
-if __name__ == "__main__":
+def main():
     window_name = "CameraBuffer"
     cv.namedWindow(window_name)
 
@@ -74,3 +76,10 @@ if __name__ == "__main__":
         camera.wait_recording(0.1)
 
     camera.stop_recording()
+        
+#Test harness for checking camera by itself
+if __name__ == "__main__":
+    main()
+
+
+
