@@ -9,6 +9,7 @@ output_filename = 'OutputImages/output.jpg'
 output_folder = 'OutputImages/'
 
 img = cv.imread(input_filename)
+print("Image shape",img.shape)
 cv.imwrite(output_filename,img)
 
 #Colors for drawing on image
@@ -17,6 +18,7 @@ purple = [255,0,255]
 
 #Canny edge detection
 img_gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
+print("Gray Image Shape",img_gray.shape)
 cv.imwrite(output_folder + "gray_image.jpg",img_gray)
 
 def nothing(x):
@@ -128,6 +130,7 @@ def RunCannyTuningWindow(img_gray):
 def FilterPipeline(img_gray):
 
     #dilation params
+    #Dilation takes max within kernel, and applies it to every other pixel within kernel
     dilate_kernal_size = 5
     dilate_kernel = cv.getStructuringElement(cv.MORPH_RECT, (dilate_kernal_size,dilate_kernal_size) )
 
