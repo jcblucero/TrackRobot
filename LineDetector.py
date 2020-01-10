@@ -186,6 +186,7 @@ def FindLines(edge_img, probabilistic=False):
 
 #
 
+# Take HoughLines and eliminate unlikely candidates. Then group using kmeans and output as np array
 def FilterForTrackLaneLines(lines, probabilistic=False):
 
     #Step 1: Take output of HoughLines(P) and convert to useful np matrix format
@@ -208,6 +209,56 @@ def FilterForTrackLaneLines(lines, probabilistic=False):
         matrix_shape = (lines.shape[0],lines.shape[2])
         print (lines.reshape(matrix_shape))
         clustering_lines = lines.reshape(matrix_shape)
+
+    #Step 2 - Eliminate lines that are unlikely to be track lane lines
+    if probabilistic:
+        #Filter lines that are too horizontal (+-30deg of 0 which is horizontal)
+        #tan(theta) = opp/adj -> rise/run -> slope. tan(theta) == slope
+        lower_angle_threshold = np.tan(30 * np.pi/180)
+        upper_angle_threshold = np.tan(-30 * np.pi/180)
+
+        selection_array = (clustering_lines[:,0] >= lower_angle_threshold) | (clustering_lines[:,0] <= upper_angle_threshold)
+        clustering_lines = clustering_lines[selection_array] 
+        print ("filtered clustering lines")
+        print (clustering_lines)
+    else:
+        #Filter lines that are too horizontal (60-120deg, +-30deg of 90 which is horizontal)
+        lower_angle_threshold = 60 * np.pi/180
+        upper_angle_threshold = 120 * np.pi/180
+
+        selection_array = (clustering_lines[:,1] <= lower_angle_threshold) | (clustering_lines[:,1] >= upper_angle_threshold)
+        clustering_lines = clustering_lines[selection_array] 
+        print (clustering_lines)
+
+    #Step 3 - Cluster remaining lines so that we have 2 groups.
+    if probabilistic:
+        # probabilistic lines are in slope-intercept (m,b) format so cluster on that
+        criteria = (cv.TERM_CRITERIA_MAX_ITER, 10, 0.001)
+        clustering_lines = np.float32(clustering_lines)
+        ret,label,best_lines=cv.kmeans(clustering_lines,2,None,criteria,10,cv.KMEANS_RANDOM_CENTERS)
+                                     
+    else:                                     
+    # standard hough lines in (rho,theta). This has discontinuity on when going from 2pi->0...
+    # ...so we convert to (x,y) representation and cluster on those points
+        #Convert to x/y form using sin/cos to avoid discontinuities in (theta 0-2pi, and rho negative distance)
+        xy_clustering = np.copy(clustering_lines)
+        xy_clustering[:,0] = np.sin(clustering_lines[:,1]) * clustering_lines[:,0] #y's = sin(theta) * rho
+        xy_clustering[:,1] = np.cos(clustering_lines[:,1]) * clustering_lines[:,0] #x's = cos(theta) * rho
+        
+        #kmeans clustering
+        criteria = (cv.TERM_CRITERIA_MAX_ITER, 10, 0.001)
+        xy_clustering = np.float32(xy_clustering)
+        ret,label,centers_xy=cv.kmeans(xy_clustering,2,None,criteria,10,cv.KMEANS_RANDOM_CENTERS)
+
+        #convert back to theta/rho
+        best_lines=np.copy(centers_xy)
+        best_lines[:,0] = np.sqrt(centers_xy[:,0]*centers_xy[:,0] + centers_xy[:,1]*centers_xy[:,1]) #rho
+        best_lines[:,1] = np.arctan(centers_xy[:,0]/centers_xy[:,1])
+
+        print("KMeans Centers -- \n{}".format(centers))
+
+    return best_lines
+    
 
 #Finds the center of two (x,y) points and returns (x,y) as integers
 def FindCenter(pt1,pt2):
