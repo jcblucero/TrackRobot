@@ -40,7 +40,7 @@ class YInterceptLine(object):
         return (self.m * x) + self.b
 
     #Predict the x value
-    def predict_y(self, y):
+    def predict_x(self, y):
         #x = (y-b) / m
         return (y - self.b) / self.m
 
@@ -534,7 +534,7 @@ def CalculateScaledTrajectoryError( center_point, image_dimensions):
 def Test(test_img):
 
     #Probabilistic determins if we use HoughLines or HoughLinesP
-    probabilistic = False
+    probabilistic = True
 
     #Current filter pipeline designed for 320x240, have to downsample mannually (future config camera)
     #test_img = cv.pyrDown(src=test_img)
