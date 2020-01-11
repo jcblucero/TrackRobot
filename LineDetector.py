@@ -15,6 +15,7 @@ cv.imwrite(output_filename,img)
 #Colors for drawing on image
 green = [0,255,0]
 purple = [255,0,255]
+blue = [255,0,0]
 
 #Canny edge detection
 img_gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
@@ -23,6 +24,44 @@ cv.imwrite(output_folder + "gray_image.jpg",img_gray)
 
 def nothing(x):
     pass
+#
+### Classes
+
+class YInterceptLine(object):
+    #Line represented by: y = m*x+b
+
+    def __init__(self, _m, _b):
+        self.m = _m
+        self.b = _b
+    
+    #Predict the y value
+    def predict_y(self, x):
+        #y = m*x + b
+        return (self.m * x) + self.b
+
+    #Predict the x value
+    def predict_y(self, y):
+        #x = (y-b) / m
+        return (y - self.b) / self.m
+
+class PolarLine(object):
+    #Line represented by: r = x *cos(theta) + y*sin(theta)
+
+    def __init__(self, _rho, _theta):
+        self.rho = _rho
+        self.theta = _theta
+    
+    #Predict the y value
+    def predict_y(self, x):
+        #Y = (r-Xcos(theta)) / sin(theta)
+        return (self.rho - (x*np.cos(self.theta))) / np.sin(self.theta)
+
+    #Given y, predict the x value
+    def predict_x(self, y):
+        #X = (r-Ysin(theta)) / cos(theta)
+        return (self.rho - (y*np.sin(self.theta))) / np.cos(self.theta)
+#
+###
 
 #Canny Tuning Window
 #Input - Grayscale Image
@@ -191,7 +230,7 @@ def FilterForTrackLaneLines(lines, probabilistic=False):
 
     #Step 1: Take output of HoughLines(P) and convert to useful np matrix format
     if probabilistic:
-        clustering_lines = np.zeros( (lines.shape[0],2)
+        clustering_lines = np.zeros( (lines.shape[0],2) )
         count = 0
         for line in lines:
             print("Line #{}".format(count) )
@@ -238,7 +277,7 @@ def FilterForTrackLaneLines(lines, probabilistic=False):
         ret,label,best_lines=cv.kmeans(clustering_lines,2,None,criteria,10,cv.KMEANS_RANDOM_CENTERS)
                                      
     else:                                     
-    # standard hough lines in (rho,theta). This has discontinuity on when going from 2pi->0...
+    # standard hough lines in polar(rho,theta). This has discontinuity on when going from 2pi->0...
     # ...so we convert to (x,y) representation and cluster on those points
         #Convert to x/y form using sin/cos to avoid discontinuities in (theta 0-2pi, and rho negative distance)
         xy_clustering = np.copy(clustering_lines)
@@ -255,9 +294,17 @@ def FilterForTrackLaneLines(lines, probabilistic=False):
         best_lines[:,0] = np.sqrt(centers_xy[:,0]*centers_xy[:,0] + centers_xy[:,1]*centers_xy[:,1]) #rho
         best_lines[:,1] = np.arctan(centers_xy[:,0]/centers_xy[:,1])
 
-        print("KMeans Centers -- \n{}".format(centers))
+        print("KMeans Centers -- \n{}".format(best_lines))
 
     return best_lines
+
+#Predict the x position corresponding to y for each line, then take the middle of those two
+def PredictLinesCenterX(y,line1,line2):
+    point1 = (line1.predict_x(y),y)
+    point2 = (line2.predict_x(y),y)
+
+    center_point = FindCenter(point1,point2)
+    return center_point
     
 
 #Finds the center of two (x,y) points and returns (x,y) as integers
@@ -484,6 +531,39 @@ def CalculateScaledTrajectoryError( center_point, image_dimensions):
 
     return scaled_error
     
+def Test(test_img):
+
+    #Probabilistic determins if we use HoughLines or HoughLinesP
+    probabilistic = False
+
+    #Current filter pipeline designed for 320x240, have to downsample mannually (future config camera)
+    #test_img = cv.pyrDown(src=test_img)
+    img_gray = cv.cvtColor(test_img,cv.COLOR_BGR2GRAY)
+
+    #Step 1 - Pass through filters
+    edges = FilterPipeline(img_gray)
+
+    #Step 2 - Find all Lines within image
+    lines = FindLines(edges,probabilistic)
+
+    #Step 3 - Eliminate non-track lines, and then group to find most likely line
+    #TODO: How to handle if camera FOV is large and sees more than 1 track lane? - bin by distance 2 center?
+    best_lines = FilterForTrackLaneLines(lines, probabilistic)
+    #convert to classes for ease of calculating x/y from line format
+    if probabilistic:
+        line1 = YInterceptLine(best_lines[0,0],best_lines[0,1])
+        line2 = YInterceptLine(best_lines[1,0],best_lines[1,1])        
+    else:
+        line1 = PolarLine(best_lines[0,0],best_lines[0,1])
+        line2 = PolarLine(best_lines[1,0],best_lines[1,1])
+
+    #Step 4 - Find center
+    middle_y = int(img_gray.shape[0] / 2)
+    center_point = PredictLinesCenterX(middle_y,line1,line2)
+
+    #Draw output
+    cv.circle(test_img, center_point, 3, blue, thickness=3, lineType=8, shift=0)
+    cv.imwrite(output_folder + "line_img2.jpg",test_img)
     
 
 if __name__ == "__main__":
@@ -523,6 +603,10 @@ if __name__ == "__main__":
 
     print(time.time(),time.clock())
     print(timet2-timet1,timec2-timec1)
+
+
+    print("----------Testing Refactor--------")
+    Test(downsampled_orig)
 
 
 
