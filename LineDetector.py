@@ -534,12 +534,12 @@ def CalculateScaledTrajectoryError( center_point, image_dimensions):
 def Test(test_img):
 
     #Probabilistic determins if we use HoughLines or HoughLinesP
-    probabilistic = True
+    probabilistic = False
 
     #Current filter pipeline designed for 320x240, have to downsample mannually (future config camera)
     #test_img = cv.pyrDown(src=test_img)
-    img_gray = cv.cvtColor(test_img,cv.COLOR_BGR2GRAY)
-
+    #img_gray = cv.cvtColor(test_img,cv.COLOR_BGR2GRAY)
+    img_gray = np.copy(test_img)
     #Step 1 - Pass through filters
     edges = FilterPipeline(img_gray)
 
@@ -564,6 +564,11 @@ def Test(test_img):
     #Draw output
     cv.circle(test_img, center_point, 3, blue, thickness=3, lineType=8, shift=0)
     cv.imwrite(output_folder + "line_img2.jpg",test_img)
+
+    #Print output
+    CalculateScaledTrajectoryError(center_point, img_gray.shape)
+    print("Predicted center {}, Expected Center {}".format(center_point, (img_gray.shape[0]/2,img_gray.shape[1]/2) ))
+
     
 
 if __name__ == "__main__":
@@ -606,7 +611,7 @@ if __name__ == "__main__":
 
 
     print("----------Testing Refactor--------")
-    Test(downsampled_orig)
+    Test(img_gray)
 
 
 
