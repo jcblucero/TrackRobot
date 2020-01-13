@@ -324,6 +324,53 @@ def ConvertToSlopeIntercept(line_coords):
     slope_intercept = (m,b)
     return slope_intercept
 
+
+#Draw lines on image. Probabilistic tells us whether HoughLines or HoughLinesP was used to generate lines
+# image - image to draw lines in
+# lines - array of lines. output of Houghlines(P). Either np.array of (rho,theta) or np.array of (pt1.x,pt1.y,pt2.x,pt2.y)
+# probabilistic - if true, lines are in point form
+def DrawLines2(img,lines,probabilistic):
+    red = [0,0,255]
+    width = 3
+
+    if lines is None:
+        print( "No lines found")
+        return 
+
+    if probabilistic:
+        print("Lines Shape:")
+        print(lines.shape)
+        max_lines_to_print = 2
+        count = 0
+        for line in lines:
+            print("Line #{}".format(count) )
+            count += 1
+            coords = line[0]
+            pt1 = (coords[0],coords[1])
+            pt2 = (coords[2],coords[3])
+            cv.line(img, pt1, pt2, red, width)
+            print("point 1 = {},{} ; point 2 = {},{}".format(pt1[0],pt1[1],pt2[0],pt2[1]))
+
+            slope_intercept = ConvertToSlopeIntercept(coords)
+            print("Slope = {} , B = {} ".format(slope_intercept[0],slope_intercept[1]))
+    else:
+        count = 0
+        for line in lines:
+            print("Line #{}".format(count) )
+            count += 1
+            ##Adapted from OpenCv HoughLines Tutorial
+            rho = line[0][0]
+            theta = line[0][1]
+            print("Theta {}, Rho {}".format(theta,rho) )
+            a = math.cos(theta)
+            b = math.sin(theta)
+            x0 = a*rho
+            y0 = b*rho
+            pt1 = ( int(x0 + 5000*(-b)), int(y0 + 5000*(a)) )
+            pt2 = ( int(x0 - 5000*(-b)), int(y0 - 5000*(a) ))
+            cv.line( img, pt1, pt2, red, width)
+
+
 def DrawLinesThetaRho(img,lines):
     red = [0,0,255]
     width = 3
@@ -538,8 +585,8 @@ def Test(test_img):
 
     #Current filter pipeline designed for 320x240, have to downsample mannually (future config camera)
     #test_img = cv.pyrDown(src=test_img)
-    #img_gray = cv.cvtColor(test_img,cv.COLOR_BGR2GRAY)
-    img_gray = np.copy(test_img)
+    img_gray = cv.cvtColor(test_img,cv.COLOR_BGR2GRAY)
+    #img_gray = np.copy(test_img)
     #Step 1 - Pass through filters
     edges = FilterPipeline(img_gray)
 
@@ -563,6 +610,7 @@ def Test(test_img):
 
     #Draw output
     cv.circle(test_img, center_point, 3, blue, thickness=3, lineType=8, shift=0)
+    DrawLines2(test_img,lines,probabilistic)
     cv.imwrite(output_folder + "line_img2.jpg",test_img)
 
     #Print output
@@ -611,7 +659,8 @@ if __name__ == "__main__":
 
 
     print("----------Testing Refactor--------")
-    Test(img_gray)
+    #Test(img_gray)
+    Test(downsampled_orig)
 
 
 
