@@ -10,10 +10,14 @@ SIGNAL_PIN = 19
 #If not set, it will use default full FoV and scale to resolution
 #I suspect this means fps is slow if mode isn't set...but reported framerate is still 60 so not sure
 #TODO: If framerate is issue in future, see if setting sensor_mode has an affect (lowers field of view)
-picamera = PiCamera.PiCamera(resolution=(640,480), framerate=60.0)
+#picamera = PiCamera.PiCamera(resolution=(640,480), framerate=60.0)
+picamera = Picamera.PiCamera(
+    sensor_mode=4,
+    resolution='320x240',
+    framerate=40)
 #picamera = picamera.PiCamera(sensor_mode=6)
 
-picamera.framerate = 60.0
+picamera.framerate = 40
 print("CameraFramerate {}".format(picamera.framerate))
 
 def PrintInitError():
@@ -50,7 +54,7 @@ def CapturePicture():
     print("picture taken: {}".format(picture_count))
     picamera.capture('low_res_pic_{}.jpg'.format(picture_count))
     picamera.start_recording('low_res_vid_{}.h264'.format(picture_count))
-    time.sleep(4)
+    time.sleep(10)
     picamera.stop_recording()
                              
 

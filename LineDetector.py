@@ -613,7 +613,7 @@ def LaneCenterFinder(test_img):
     center_point = PredictLinesCenterX(middle_y,line1,line2)
 
     #Draw output
-    """ For testing purposes
+    #For testing purposes
     cv.circle(test_img, center_point, 3, blue, thickness=3, lineType=8, shift=0)
     DrawLines2(test_img,lines,probabilistic)
     cv.imwrite(output_folder + "line_img2.jpg",test_img)
@@ -621,7 +621,7 @@ def LaneCenterFinder(test_img):
     #Print output
     CalculateScaledTrajectoryError(center_point, img_gray.shape)
     print("Predicted center {}, Expected Center {}".format(center_point, (img_gray.shape[0]/2,img_gray.shape[1]/2) ))
-    """
+    
 
     return center_point
     
