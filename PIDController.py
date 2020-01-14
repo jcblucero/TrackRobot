@@ -13,7 +13,7 @@ def CalculateRawError(measured, desired):
 #We use a scaled error between [-100.0,100.0] (float) so that PID is impartial to viewing dimensions
 #Inputs: center_point - (x,y) pair  - center of lines found through line detection
 #       image_dimensions - tuple - dimensions of image fed by camera to line detection
-#Outputs: Float between [-100.0,100.0] representing error. (by convention, negative means measured center is right of image center, so we want to turn left)
+#Outputs: Float between [-100.0,100.0] representing error. (by convention, negative means measured center is Robot right of image center, so we want to turn left)
 def CalculateScaledTrajectoryError( center_point, image_dimensions):
     
     print("Image Dimensions {}".format(image_dimensions))
@@ -26,7 +26,7 @@ def CalculateScaledTrajectoryError( center_point, image_dimensions):
 
     raw_error = float(desired_value - measured_value)
 
-    scaled_error = (raw_error / max_error) * 100.0
+    scaled_error = (raw_error / max_error) * -100.0
 
     print("Max Error = {}, Raw Error = {}, Scaled Error = {}".format(max_error, raw_error,scaled_error) )
 

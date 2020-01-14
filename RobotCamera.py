@@ -58,6 +58,26 @@ class CameraBuffer(object):
     def flush(self):
         pass
 
+
+#May be useful to simplify using camera
+class ImageFeed(object):
+
+    def __init__(self):
+        self.camera = picamera.PiCamera(
+            sensor_mode=4,
+            resolution='320x240',
+            framerate=40)
+
+        self.camera_buffer = CameraBuffer()
+
+    def start(self):
+        self.camera.start_recording(self.camera_buffer, 'rgb')
+    
+    def read(self):
+        self.camera.wait_recording()
+        return self.camera_buffer.read()
+
+
 def main():
     window_name = "CameraBuffer"
     cv.namedWindow(window_name)
