@@ -13,8 +13,8 @@ import PIDController
 def main():
 
     #Global Input Files (for testing)
-    #input_filename = 'InputImages/low_res_pic_20.jpg'
-    input_filename = 'InputImages/trackpic3.jpg'
+    input_filename = 'InputImages/low_res_pic_20.jpg'
+    #input_filename = 'InputImages/trackpic3.jpg'
     output_filename = 'OutputImages/output.jpg'
     output_folder = 'OutputImages/'
 

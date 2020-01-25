@@ -50,7 +50,7 @@ class CameraBuffer(object):
         temp = np.frombuffer( buffer, dtype=np.uint8, count=240*320*3).reshape( (240,320,3) )
         self.data = cv.cvtColor(temp,cv.COLOR_BGR2GRAY)
         timet2 = time.time()
-        print(timet2-timet1)
+        #print(timet2-timet1)
 
     def read(self):
         return self.data
@@ -93,7 +93,7 @@ def main():
         keypressed = cv.waitKey(50)
         #print(keypressed)
         #time.sleep(1)
-        camera.wait_recording(0.1)
+        camera.wait_recording()
 
     camera.stop_recording()
         

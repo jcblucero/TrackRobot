@@ -5,7 +5,7 @@
 
 import servo_motor as SV
 
-MOTOR_GPIO_PIN = 13 #GPIO19 is pin 35, can be used for PWM
+MOTOR_GPIO_PIN = 19 #GPIO19 is pin 35, can be used for PWM
 TRAXXAS_PWM_FREQUENCY = 100 #100hz frequency for traxxas servos
 
 #Create motor controller, and set to nuetral
