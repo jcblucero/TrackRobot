@@ -26,7 +26,8 @@ while input_from_user!="q":
     
     #print out current duty cycle and gather new input from user    
     print("motor set to {}".format(motor_pwm.duty_cycle) )
-    input_from_user = raw_input("Enter a duty cycle or q to quit\n")
+    #input_from_user = raw_input("Enter a duty cycle or q to quit\n")
+    input_from_user = input("Enter a duty cycle or q to quit\n")
 
     
 

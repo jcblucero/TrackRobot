@@ -60,7 +60,7 @@ class ServoMotor:
     #Inputs: duty_cycle - float between 0.0-100.0
     def SetDutyCycle(self,duty_cycle):
         self.duty_cycle = duty_cycle
-        pi.hardware_PWM(self.gpio_pin,self.frequency,self.duty_cycle*self.DUTY_CYCLE_MULTIPLIER)
+        pi.hardware_PWM(self.gpio_pin,self.frequency,int(self.duty_cycle*self.DUTY_CYCLE_MULTIPLIER))
 
         
 

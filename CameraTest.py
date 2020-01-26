@@ -13,8 +13,8 @@ SIGNAL_PIN = 19
 #picamera = PiCamera.PiCamera(resolution=(640,480), framerate=60.0)
 picamera = PiCamera.PiCamera(
     #resolution='320x240',
-    resolution='640x480')
-    #framerate=20.0)
+    resolution='640x480',
+    framerate=40.0)
 
 #picamera = PiCamera.PiCamera(resolution=(640,480), framerate=60.0)
 #picamera = picamera.PiCamera(sensor_mode=6)
@@ -54,7 +54,7 @@ def CapturePicture():
     global picture_count
     picture_count += 1
     print("picture taken: {}".format(picture_count))
-    picamera.capture('low_res_pic_{}.jpg'.format(picture_count))
+    #picamera.capture('low_res_pic_{}.jpg'.format(picture_count))
     picamera.start_recording('low_res_vid_{}.h264'.format(picture_count))
     picamera.wait_recording(4)
     #time.sleep(4)
