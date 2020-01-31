@@ -228,6 +228,10 @@ def FindLines(edge_img, probabilistic=False):
 # Take HoughLines and eliminate unlikely candidates. Then group using kmeans and output as np array
 def FilterForTrackLaneLines(lines, probabilistic=False):
 
+    #Raise an exception if there are less than the two edges of a single line. Clustering assumes atleast 2
+    if lines.shape[0] < 2:
+        raise Exception('Expected atleast 2 lines before filter. Found {}'.format(lines.shape[0]))
+
     #Step 1: Take output of HoughLines(P) and convert to useful np matrix format
     if probabilistic:
         clustering_lines = np.zeros( (lines.shape[0],2) )
@@ -268,6 +272,10 @@ def FilterForTrackLaneLines(lines, probabilistic=False):
         selection_array = (clustering_lines[:,1] <= lower_angle_threshold) | (clustering_lines[:,1] >= upper_angle_threshold)
         clustering_lines = clustering_lines[selection_array] 
         print (clustering_lines)
+
+    #Raise an exception if there are less than the two lines after filtering. Centering assumes atleast 2
+    if clustering_lines.shape[0] < 2:
+        raise Exception('Expected atleast 2 lane lines after filter. Found {}'.format(clustering_lines.shape[0]))
 
     #Step 3 - Cluster remaining lines so that we have 2 groups.
     if probabilistic:
