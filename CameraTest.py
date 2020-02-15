@@ -54,7 +54,7 @@ def CapturePicture():
     global picture_count
     picture_count += 1
     print("picture taken: {}".format(picture_count))
-    #picamera.capture('low_res_pic_{}.jpg'.format(picture_count))
+    picamera.capture('low_res_pic_{}.jpg'.format(picture_count))
     picamera.start_recording('low_res_vid_{}.h264'.format(picture_count))
     picamera.wait_recording(4)
     #time.sleep(4)

@@ -62,6 +62,8 @@ class ServoMotor:
         self.duty_cycle = duty_cycle
         pi.hardware_PWM(self.gpio_pin,self.frequency,int(self.duty_cycle*self.DUTY_CYCLE_MULTIPLIER))
 
-        
+    #Return the currently set duty cycle
+    def GetDutyCycle(self):
+        return self.duty_cycle
 
         

@@ -4,7 +4,8 @@ import math as math
 import time
 
 #Global Input Files (for testing)
-input_filename = 'InputImages/low_res_pic_11.jpg'
+input_filename = 'InputImages/low_res_pic_20.jpg'
+#input_filename = 'low_res_pic_1.jpg'
 output_filename = 'OutputImages/output.jpg'
 output_folder = 'OutputImages/'
 
@@ -656,6 +657,7 @@ if __name__ == "__main__":
     img_gray = cv.pyrDown(src=img_gray, dst=img_gray ) #defaults to half size
     edges = FilterPipeline(img_gray)
 
+    """
     #Line detection and drawing
     line_img = np.copy(downsampled_orig)
     lines = FindLines(edges)
@@ -671,7 +673,7 @@ if __name__ == "__main__":
 
     print(time.time(),time.clock())
     print(timet2-timet1,timec2-timec1)
-
+    """
 
     print("----------Testing Refactor--------")
     #Test(img_gray)
