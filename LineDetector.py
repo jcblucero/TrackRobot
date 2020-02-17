@@ -307,12 +307,41 @@ def FilterForTrackLaneLines(lines, probabilistic=False):
 
     return best_lines
 
+#make sure that any lines in given input, reach from the top of the image to bottom (within img dimensions)
+#Input - prediction_lines - List of Yintercept/PolarLines
+#   image_shape - shape of image to check dimensions of (rows,columns)
+#Output - returns list of lines that fit within dimensions while spanning top to bot
+def FilterForTopToBotLines(prediction_lines,image_shape):
+    output = []
+    left = 0
+    right = image_shape[1]
+    top = 1 #Don't start at 0 to give some leeway
+    bot= image_shape[0] - 1 #again, bring in by 1 pixel to give more leeway
+    #print(right)
+    for line in prediction_lines:
+        top_pred = line.predict_x(top)
+        bot_pred = line.predict_x(bot)
+        if (top_pred <= right) and (bot_pred <= right) and (top_pred >= left) and (bot_pred >= left):
+            output.append(line)
+
+    return output
+
 #Predict the x position corresponding to y for each line, then take the middle of those two
+"""
 def PredictLinesCenterX(y,line1,line2):
     point1 = (line1.predict_x(y),y)
     point2 = (line2.predict_x(y),y)
 
     center_point = FindCenter(point1,point2)
+    return center_point
+"""
+def PredictLinesCenterX(y,prediction_lines):
+    x_sum = 0
+    for line in prediction_lines:
+        x_sum += line.predict_x(y)
+
+    center_point = ( int(x_sum / len(prediction_lines) ), y)
+    
     return center_point
     
 
@@ -610,16 +639,26 @@ def LaneCenterFinder(test_img):
     #TODO: How to handle if camera FOV is large and sees more than 1 track lane? - bin by distance 2 center?
     best_lines = FilterForTrackLaneLines(lines, probabilistic)
     #convert to classes for ease of calculating x/y from line format
+    prediction_lines = []
     if probabilistic:
-        line1 = YInterceptLine(best_lines[0,0],best_lines[0,1])
-        line2 = YInterceptLine(best_lines[1,0],best_lines[1,1])        
+        for i, line in enumerate(best_lines):
+            prediction_lines.append(YInterceptLine(best_lines[i,0],best_lines[i,1]))
+        #line1 = YInterceptLine(best_lines[0,0],best_lines[0,1])
+        #line2 = YInterceptLine(best_lines[1,0],best_lines[1,1])        
     else:
-        line1 = PolarLine(best_lines[0,0],best_lines[0,1])
-        line2 = PolarLine(best_lines[1,0],best_lines[1,1])
+        for i, line in enumerate(best_lines):
+            prediction_lines.append(PolarLine(best_lines[i,0],best_lines[i,1]))
+        #line1 = PolarLine(best_lines[0,0],best_lines[0,1])
+        #line2 = PolarLine(best_lines[1,0],best_lines[1,1])
+
+    #Step 3.5 - Another elimination step. Check that all best_lines touch top and bottom of picture
+    prediction_lines = FilterForTopToBotLines(prediction_lines,test_img.shape)
+    #prediction_lines = [line1]
 
     #Step 4 - Find center
     middle_y = int(img_gray.shape[0] / 2)
-    center_point = PredictLinesCenterX(middle_y,line1,line2)
+    #center_point = PredictLinesCenterX(middle_y,line1,line2)
+    center_point = PredictLinesCenterX(middle_y,prediction_lines)
 
     #Draw output
     #For testing purposes

@@ -110,7 +110,7 @@ def single_run():
     lane_error_count = 0
 
     #Global Input Files (for testing)
-    input_filename = 'InputImages/low_res_pic_11.jpg'
+    input_filename = 'InputImages/low_res_pic_20.jpg'
     #input_filename = 'low_res_pic_1.jpg'
     #input_filename = 'InputImages/trackpic12.jpg'
     output_filename = 'OutputImages/output.jpg'
