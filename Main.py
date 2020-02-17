@@ -83,6 +83,10 @@ def main_loop():
     #my_image = np.ones( (240,320), dtype=np.uint8)
     keypressed = None
     count = 100
+
+    #Timing and loop
+    timec1 = time.clock()
+    timet1 = time.time()
     for i in range(count):
         if keypressed == 'q':
             break
@@ -94,6 +98,11 @@ def main_loop():
         RobotCamera.camera.wait_recording()
 
         command_robot(my_image,lateral_pwm)
+        
+    timec2 = time.clock()
+    timet2 = time.time()
+    #print("time.time",time.time(),time.clock())
+    print("time.clock", timec2-timec1, "time.time",timet2-timet1)
 
     RobotCamera.camera.stop_recording()
     
@@ -160,5 +169,5 @@ def single_run():
 
 if __name__ == "__main__":
 
-    #main_loop()
-    single_run()
+    main_loop()
+    #single_run()
