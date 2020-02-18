@@ -82,7 +82,7 @@ def main_loop():
     RobotCamera.camera.start_recording(camera_buffer, 'rgb')
     #my_image = np.ones( (240,320), dtype=np.uint8)
     keypressed = None
-    count = 100
+    count = 300
 
     #Timing and loop
     timec1 = time.clock()
@@ -119,8 +119,8 @@ def single_run():
     lane_error_count = 0
 
     #Global Input Files (for testing)
-    input_filename = 'InputImages/low_res_pic_20.jpg'
-    #input_filename = 'low_res_pic_1.jpg'
+    #input_filename = 'InputImages/low_res_pic_20.jpg'
+    input_filename = 'low_res_pic_1.jpg'
     #input_filename = 'InputImages/trackpic12.jpg'
     output_filename = 'OutputImages/output.jpg'
     output_folder = 'OutputImages/'
