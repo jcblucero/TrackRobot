@@ -4,14 +4,14 @@ import math as math
 import time
 
 #Global Input Files (for testing)
-input_filename = 'InputImages/low_res_pic_20.jpg'
-#input_filename = 'low_res_pic_1.jpg'
+#input_filename = 'InputImages/low_res_pic_20.jpg'
+input_filename = 'low_res_pic_1.jpg'
 output_filename = 'OutputImages/output.jpg'
 output_folder = 'OutputImages/'
 
 img = cv.imread(input_filename)
 print("Image shape",img.shape)
-cv.imwrite(output_filename,img)
+#cv.imwrite(output_filename,img)
 
 #Colors for drawing on image
 green = [0,255,0]
@@ -21,7 +21,7 @@ blue = [255,0,0]
 #Canny edge detection
 img_gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
 print("Gray Image Shape",img_gray.shape)
-cv.imwrite(output_folder + "gray_image.jpg",img_gray)
+#cv.imwrite(output_folder + "gray_image.jpg",img_gray)
 
 def nothing(x):
     pass
@@ -45,6 +45,15 @@ class YInterceptLine(object):
         #x = (y-b) / m
         return (y - self.b) / self.m
 
+    #Draw this line on given image
+    def draw(self, img):
+        color = [0,255,0]
+        left_x = 0
+        right_x = img.shape[1] #columns
+        pt1 = (left_x, int(self.predict_y(left_x)) )
+        pt2 = (right_x, int(self.predict_y(right_x)) )
+        cv.line( img, pt1, pt2, color, 2)
+
 class PolarLine(object):
     #Line represented by: r = x *cos(theta) + y*sin(theta)
 
@@ -61,6 +70,17 @@ class PolarLine(object):
     def predict_x(self, y):
         #X = (r-Ysin(theta)) / cos(theta)
         return (self.rho - (y*np.sin(self.theta))) / np.cos(self.theta)
+
+    #Draw this line on given image
+    def draw(self, img):
+        color = [0,255,0]
+        left_x = 0
+        right_x = img.shape[1] #columns
+        pt1 = (left_x, int(self.predict_y(left_x)) )
+        pt2 = (right_x, int(self.predict_y(right_x)) )
+        print("pt1,pt1",pt1,pt2)
+        cv.line( img, pt1, pt2, color, 2)
+        
 #
 ###
 
@@ -263,8 +283,6 @@ def FilterForTrackLaneLines(lines, probabilistic=False):
 
         selection_array = (clustering_lines[:,0] >= lower_angle_threshold) | (clustering_lines[:,0] <= upper_angle_threshold)
         clustering_lines = clustering_lines[selection_array] 
-        print ("filtered clustering lines")
-        print (clustering_lines)
     else:
         #Filter lines that are too horizontal (60-120deg, +-30deg of 90 which is horizontal)
         lower_angle_threshold = 60 * np.pi/180
@@ -272,7 +290,9 @@ def FilterForTrackLaneLines(lines, probabilistic=False):
 
         selection_array = (clustering_lines[:,1] <= lower_angle_threshold) | (clustering_lines[:,1] >= upper_angle_threshold)
         clustering_lines = clustering_lines[selection_array] 
-        print (clustering_lines)
+
+    print ("filtered clustering lines")
+    print (clustering_lines)
 
     #Raise an exception if there are less than the two lines after filtering. Centering assumes atleast 2
     if clustering_lines.shape[0] < 2:
@@ -301,7 +321,8 @@ def FilterForTrackLaneLines(lines, probabilistic=False):
         #convert back to theta/rho
         best_lines=np.copy(centers_xy)
         best_lines[:,0] = np.sqrt(centers_xy[:,0]*centers_xy[:,0] + centers_xy[:,1]*centers_xy[:,1]) #rho
-        best_lines[:,1] = np.arctan(centers_xy[:,0]/centers_xy[:,1])
+        #best_lines[:,1] = np.arctan(centers_xy[:,0]/centers_xy[:,1])
+        best_lines[:,1] = np.arctan2(centers_xy[:,0],centers_xy[:,1])
 
         print("KMeans Centers -- \n{}".format(best_lines))
 
@@ -634,10 +655,14 @@ def LaneCenterFinder(test_img):
 
     #Step 2 - Find all Lines within image
     lines = FindLines(edges,probabilistic)
+    #print("lines")
+    #print(lines)
 
     #Step 3 - Eliminate non-track lines, and then group to find most likely line
     #TODO: How to handle if camera FOV is large and sees more than 1 track lane? - bin by distance 2 center?
     best_lines = FilterForTrackLaneLines(lines, probabilistic)
+    #print("best lines size", len(best_lines))
+    #print(best_lines)
     #convert to classes for ease of calculating x/y from line format
     prediction_lines = []
     if probabilistic:
@@ -652,7 +677,9 @@ def LaneCenterFinder(test_img):
         #line2 = PolarLine(best_lines[1,0],best_lines[1,1])
 
     #Step 3.5 - Another elimination step. Check that all best_lines touch top and bottom of picture
-    prediction_lines = FilterForTopToBotLines(prediction_lines,test_img.shape)
+    for line in prediction_lines:
+        line.draw(test_img)
+    #prediction_lines = FilterForTopToBotLines(prediction_lines,test_img.shape)
     #prediction_lines = [line1]
 
     #Step 4 - Find center
@@ -663,7 +690,7 @@ def LaneCenterFinder(test_img):
     #Draw output
     #For testing purposes
     cv.circle(test_img, center_point, 3, blue, thickness=3, lineType=8, shift=0)
-    DrawLines2(test_img,lines,probabilistic)
+    #DrawLines2(test_img, lines,probabilistic)
     cv.imwrite(output_folder + "line_img2.jpg",test_img)
 
     #Print output

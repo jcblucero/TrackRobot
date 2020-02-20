@@ -65,8 +65,10 @@ def CapturePicture():
 
 #GPIO Pin is set pulled to ground. Take pictures/record on rising edge#
 Init()
+"""
 pi.set_mode(SIGNAL_PIN, pigpio.INPUT)
 pi.set_pull_up_down(SIGNAL_PIN,pigpio.PUD_DOWN)
+"""
 #set callback to Rising edge (pulled low, then connected to 3.3v to activate)
 #callback_object = pi.callback(SIGNAL_PIN,pigpio.RISING_EDGE,TakePicture_PigpioCallback)
     
