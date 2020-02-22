@@ -11,7 +11,8 @@ import PIDController
 import servo_motor
 #TODO: Servo motors
 
-MOTOR_GPIO_PIN = 19 #GPIO19 is pin 35, can be used for PWM
+THROTTLE_GPIO_PIN = 18
+STEERING_GPIO_PIN = 19 #GPIO19 is pin 35, can be used for PWM
 TRAXXAS_PWM_FREQUENCY = 100 #100hz frequency for traxxas servos
 output_folder = 'OutputImages/'
 
@@ -66,10 +67,16 @@ def command_robot(center_finder_input,lateral_pwm):
 def main_loop():
     #Init Servo and set to nuetral
     servo_motor.Init()
-    lateral_pwm = servo_motor.ServoMotor(MOTOR_GPIO_PIN,
+    lateral_pwm = servo_motor.ServoMotor(STEERING_GPIO_PIN,
                                          TRAXXAS_PWM_FREQUENCY)
     lateral_pwm.SetDutyCycle(lateral_pwm.NUETRAL)
     current_duty_cycle = lateral_pwm.GetDutyCycle()
+
+    #Throttle pwm
+    throttle_pwm = servo_motor.ServoMotor(THROTTLE_GPIO_PIN,
+                                         TRAXXAS_PWM_FREQUENCY)
+    #16.4% PWM is just enough to move when ESC in half speed mode
+    throttle_pwm.SetDutyCycle(16.4)
 
     global lane_error_count
     lane_error_count = 0
@@ -82,7 +89,7 @@ def main_loop():
     RobotCamera.camera.start_recording(camera_buffer, 'rgb')
     #my_image = np.ones( (240,320), dtype=np.uint8)
     keypressed = None
-    count = 300
+    count = 40
 
     #Timing and loop
     timec1 = time.clock()
@@ -104,13 +111,17 @@ def main_loop():
     #print("time.time",time.time(),time.clock())
     print("time.clock", timec2-timec1, "time.time",timet2-timet1)
 
+    #Cleanup Phase
     RobotCamera.camera.stop_recording()
+    throttle_pwm.SetDutyCycle(throttle_pwm.NUETRAL)
+    lateral_pwm.SetDutyCycle(lateral_pwm.NUETRAL)
+    servo_motor.DeInit()
     
 def single_run():
 
     #Init Servo and set to nuetral
     servo_motor.Init()
-    lateral_pwm = servo_motor.ServoMotor(MOTOR_GPIO_PIN,
+    lateral_pwm = servo_motor.ServoMotor(STEERING_GPIO_PIN,
                                          TRAXXAS_PWM_FREQUENCY)
     lateral_pwm.SetDutyCycle(lateral_pwm.NUETRAL)
     current_duty_cycle = lateral_pwm.GetDutyCycle()
@@ -131,6 +142,10 @@ def single_run():
     center_finder_input = cv.pyrDown(src=img_gray)
 
     command_robot(center_finder_input,lateral_pwm)
+
+    #Cleanup Phase
+    lateral_pwm.SetDutyCycle(lateral_pwm.NUETRAL)
+    servo_motor.DeInit()
 
     """
     #We may fail finding the lines, in which case we leave lateral control to last command state
@@ -168,6 +183,6 @@ def single_run():
 
 
 if __name__ == "__main__":
-    #time.sleep(2)
+    time.sleep(1)
     main_loop()
     #single_run()
