@@ -66,7 +66,7 @@ def command_robot(center_finder_input,lateral_pwm):
 
 def main_loop():
     #Init Servo and set to nuetral
-    servo_motor.Init()
+    #servo_motor.Init()
     lateral_pwm = servo_motor.ServoMotor(STEERING_GPIO_PIN,
                                          TRAXXAS_PWM_FREQUENCY)
     lateral_pwm.SetDutyCycle(lateral_pwm.NUETRAL)
@@ -76,20 +76,20 @@ def main_loop():
     throttle_pwm = servo_motor.ServoMotor(THROTTLE_GPIO_PIN,
                                          TRAXXAS_PWM_FREQUENCY)
     #16.4% PWM is just enough to move when ESC in half speed mode
-    throttle_pwm.SetDutyCycle(16.4)
+    throttle_pwm.SetDutyCycle(16.5)
 
     global lane_error_count
     lane_error_count = 0
 
 
-    window_name = "CameraBuffer"
-    cv.namedWindow(window_name)
+    #window_name = "CameraBuffer"
+    #cv.namedWindow(window_name)
 
     camera_buffer = RobotCamera.CameraBuffer()
     RobotCamera.camera.start_recording(camera_buffer, 'rgb')
     #my_image = np.ones( (240,320), dtype=np.uint8)
     keypressed = None
-    count = 40
+    count = 50
 
     #Timing and loop
     timec1 = time.clock()
@@ -98,8 +98,8 @@ def main_loop():
         if keypressed == 'q':
             break
         my_image = camera_buffer.read()
-        cv.imshow(window_name,my_image)
-        keypressed = cv.waitKey(50)
+        #cv.imshow(window_name,my_image)
+        #keypressed = cv.waitKey(50)
         #print(keypressed)
         #time.sleep(1)
         RobotCamera.camera.wait_recording()
@@ -115,12 +115,12 @@ def main_loop():
     RobotCamera.camera.stop_recording()
     throttle_pwm.SetDutyCycle(throttle_pwm.NUETRAL)
     lateral_pwm.SetDutyCycle(lateral_pwm.NUETRAL)
-    servo_motor.DeInit()
+    #servo_motor.DeInit()
     
 def single_run():
 
     #Init Servo and set to nuetral
-    servo_motor.Init()
+    #servo_motor.Init()
     lateral_pwm = servo_motor.ServoMotor(STEERING_GPIO_PIN,
                                          TRAXXAS_PWM_FREQUENCY)
     lateral_pwm.SetDutyCycle(lateral_pwm.NUETRAL)
@@ -145,44 +145,28 @@ def single_run():
 
     #Cleanup Phase
     lateral_pwm.SetDutyCycle(lateral_pwm.NUETRAL)
-    servo_motor.DeInit()
+    #servo_motor.DeInit()
 
-    """
-    #We may fail finding the lines, in which case we leave lateral control to last command state
-    try:
-        #Find the center observation for lateral control
-        lane_center = LineDetector.LaneCenterFinder(center_finder_input)
 
-        #Feed to lateral control and get PWM to send to servo
-        image_dimensions = center_finder_input.shape
-        desired_pwm = PIDController.LateralPIDControl(lane_center, image_dimensions, current_duty_cycle)
-
-        #Set turning
-        #TODO: clip this so it is within required range
-        desired_pwm = clip_pwm(desired_pwm)
-        lateral_pwm.SetDutyCycle(desired_pwm)
-
-    except Exception as error:
-        #Increment error and report
-        lane_error_count += 1
-        print("Lane error count: {} ".format(lane_error_count) + repr(error) )
-
-        desired_pwm = current_duty_cycle
-
-        #Save a snapshot of when we failed
-        if lane_error_count <= 5:
-            cv.imwrite(output_folder + "lane_error_{}.jpg".format(lane_error_count),center_finder_input)
+#Loop for testing on track
+#Calls main_loop when GPIO 21 pulled up. Loop indefinitely
+def test_loop():
+    SIGNAL_PIN = 21
+    servo_motor.pi.set_mode(SIGNAL_PIN, servo_motor.pigpio.INPUT)
+    servo_motor.pi.set_pull_up_down(SIGNAL_PIN,servo_motor.pigpio.PUD_DOWN)
     
-    #Output for testing
-    print(type(desired_pwm))
-    print("Desired PWM = {}".format(desired_pwm))
-    """
-
-    
-
+    while True:
+                
+        if servo_motor.pi.wait_for_edge(SIGNAL_PIN,servo_motor.pigpio.RISING_EDGE,10.0):
+            print("Calling main...")
+            main_loop()
 
 
 if __name__ == "__main__":
     time.sleep(1)
-    main_loop()
+    servo_motor.Init()
+    #main_loop()
     #single_run()
+    test_loop()
+    servo_motor.DeInit()
+
