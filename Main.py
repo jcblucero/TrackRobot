@@ -16,6 +16,8 @@ STEERING_GPIO_PIN = 19 #GPIO19 is pin 35, can be used for PWM
 TRAXXAS_PWM_FREQUENCY = 100 #100hz frequency for traxxas servos
 output_folder = 'OutputImages/'
 
+THROTTLE_SPEED = 16.5
+
 #Make sure we don't put egregious output to PWM
 #Only valid values are 10.0-20.0
 def clip_pwm(pwm):
@@ -76,7 +78,8 @@ def main_loop():
     throttle_pwm = servo_motor.ServoMotor(THROTTLE_GPIO_PIN,
                                          TRAXXAS_PWM_FREQUENCY)
     #16.4% PWM is just enough to move when ESC in half speed mode
-    throttle_pwm.SetDutyCycle(16.5)
+    global THROTTLE_SPEED
+    throttle_pwm.SetDutyCycle(THROTTLE_SPEED)
 
     global lane_error_count
     lane_error_count = 0
@@ -89,7 +92,7 @@ def main_loop():
     RobotCamera.camera.start_recording(camera_buffer, 'rgb')
     #my_image = np.ones( (240,320), dtype=np.uint8)
     keypressed = None
-    count = 50
+    count = 100
 
     #Timing and loop
     timec1 = time.clock()
@@ -154,11 +157,17 @@ def test_loop():
     SIGNAL_PIN = 21
     servo_motor.pi.set_mode(SIGNAL_PIN, servo_motor.pigpio.INPUT)
     servo_motor.pi.set_pull_up_down(SIGNAL_PIN,servo_motor.pigpio.PUD_DOWN)
+
+    global THROTTLE_SPEED
     
     while True:
                 
         if servo_motor.pi.wait_for_edge(SIGNAL_PIN,servo_motor.pigpio.RISING_EDGE,10.0):
-            print("Calling main...")
+            time.sleep(1)
+            THROTTLE_SPEED += 0.1
+            print("Calling main THROTTLE_SPEED = {}...".format(THROTTLE_SPEED))
+            if THROTTLE_SPEED >=17.2:
+                THROTTLE_SPEED = 16.5
             main_loop()
 
 
