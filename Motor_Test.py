@@ -5,12 +5,16 @@
 
 import servo_motor as SV
 
-MOTOR_GPIO_PIN = 19 #GPIO19 is pin 35, can be used for PWM
+THROTTLE_GPIO_PIN = 18
+STEERING_GPIO_PIN = 19
+#GPIO19 is pin 35, can be used for PWM
+#GPIO18 is on seperate HW PWM channel than 19
+
 TRAXXAS_PWM_FREQUENCY = 100 #100hz frequency for traxxas servos
 
 #Create motor controller, and set to nuetral
 SV.Init()
-motor_pwm = SV.ServoMotor(MOTOR_GPIO_PIN,TRAXXAS_PWM_FREQUENCY)
+motor_pwm = SV.ServoMotor(STEERING_GPIO_PIN,TRAXXAS_PWM_FREQUENCY)
 motor_pwm.SetDutyCycle(motor_pwm.NUETRAL)
 
 input_from_user = "none"
