@@ -4,8 +4,9 @@ import math as math
 import time
 
 #Global Input Files (for testing)
-#input_filename = 'InputImages/low_res_pic_20.jpg'
-input_filename = 'low_res_pic_1.jpg'
+input_filename = 'InputImages/low_res_pic_28.jpg'
+#input_filename = 'low_res_pic_1.jpg'
+#input_filename = 'lane_error_5.jpg'
 output_filename = 'OutputImages/output.jpg'
 output_folder = 'OutputImages/'
 
@@ -214,14 +215,14 @@ def FilterPipeline(img_gray):
        borderType=cv.BORDER_REPLICATE)
     #gauss_img = cv.GaussianBlur(img_gray,(5,5),0,0) #sigmaX/Y as 0's lets func determine
     #filtered_img = cv.medianBlur(img_gray,kernel_size)
-    cv.imwrite(output_folder + "filtered_image.jpg",filtered_img)
+    #cv.imwrite(output_folder + "filtered_image.jpg",filtered_img)
 
     #Step 3 of Filter - Canny Edge Detector
     #edges = cv.Canny(filtered_img,lower_canny_threshold,upper_canny_threshold)
     edges = cv.Canny(
         image=filtered_img,threshold1=lower_canny_threshold,threshold2=upper_canny_threshold, \
         apertureSize=canny_kernel_size)
-    cv.imwrite(output_folder + "edges.jpg",edges)
+    #cv.imwrite(output_folder + "edges.jpg",edges)
 
     return edges
 
@@ -721,9 +722,10 @@ if __name__ == "__main__":
     #Current filter pipeline designed for 320x240, have to downsample mannually (future config camera)
     downsampled_orig = cv.pyrDown(src=img)
     img_gray = cv.pyrDown(src=img_gray, dst=img_gray ) #defaults to half size
-    edges = FilterPipeline(img_gray)
 
     """
+    edges = FilterPipeline(img_gray)
+
     #Line detection and drawing
     line_img = np.copy(downsampled_orig)
     lines = FindLines(edges)
@@ -742,6 +744,12 @@ if __name__ == "__main__":
     """
 
     print("----------Testing Refactor--------")
+    
+    #Verify shape
+    #downsampled_orig = img
+    if ((downsampled_orig.shape[0]!=240) or  (downsampled_orig.shape[1] != 320) ):
+        print("Error in expected shape. Got {} expexted {}".format(downsampled_orig.shape[0:2],(240,320)) )
+        exit()
     #Test(img_gray)
     LaneCenterFinder(downsampled_orig)
 
