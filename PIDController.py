@@ -14,7 +14,7 @@ def CalculateRawError(measured, desired):
 #Inputs: center_point - (x,y) pair  - center of lines found through line detection
 #       image_dimensions - tuple - dimensions of image fed by camera to line detection
 #Outputs: Float between [-100.0,100.0] representing error.
-#by convention, positive means measured center is Robot left of image center(image right),so we want to turn right
+#by convention, positive means measured center is Robot left of image center(image right),so we want to turn left
 # < 15 turns right. > 15 turns left when output to servo pwm.
 def CalculateScaledTrajectoryError( center_point, image_dimensions):
     
