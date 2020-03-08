@@ -16,7 +16,8 @@ import picamera
 
 camera = picamera.PiCamera(
     sensor_mode=4,
-    resolution='320x240',
+    #resolution='320x240',
+    resolution='640x480',
     framerate=40)
 
 #Using as reference: https://raspberrypi.stackexchange.com/questions/58871/pi-camera-v2-fast-full-sensor-capture-mode-with-downsampling
@@ -46,10 +47,10 @@ class CameraBuffer(object):
     def write(self,buffer):
         #TODO: May have to lock this with mutex so that it isn't overwritten while copying
         #print("Write Called")
-        timet1 = time.time()
+        #timet1 = time.time()
         temp = np.frombuffer( buffer, dtype=np.uint8, count=240*320*3).reshape( (240,320,3) )
         self.data = cv.cvtColor(temp,cv.COLOR_BGR2GRAY)
-        timet2 = time.time()
+        #timet2 = time.time()
         #print(timet2-timet1)
 
     def read(self):
@@ -83,10 +84,11 @@ def main():
     cv.namedWindow(window_name)
 
     camera_buffer = CameraBuffer()
-    camera.start_recording(camera_buffer, 'rgb')
+    camera.start_recording(camera_buffer, 'bgr')
     #my_image = np.ones( (240,320), dtype=np.uint8)
     keypressed = None
-    count = 100
+    count = 3000
+    
     for i in range(count):    
         my_image = camera_buffer.read()
         cv.imshow(window_name,my_image)
