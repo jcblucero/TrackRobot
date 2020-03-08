@@ -43,7 +43,7 @@ def command_robot(center_finder_input,lateral_pwm):
 
         #Feed to lateral control and get PWM to send to servo
         image_dimensions = center_finder_input.shape
-        desired_pwm = PIDController.LateralPIDControl(lane_center, image_dimensions, current_duty_cycle)
+        desired_pwm = PIDController.LateralPIDControl(lane_center, image_dimensions, current_duty_cycle, THROTTLE_SPEED)
 
         #Set turning
         #TODO: clip this so it is within required range
@@ -191,7 +191,7 @@ def test_loop():
             test_loop_i += 1
             if (test_loop_i%2) == 1:
                 THROTTLE_SPEED = 16.5
-                step_count = 300
+                step_count = 450
             else:
                 THROTTLE_SPEED = 17.0
                 step_count = 150
