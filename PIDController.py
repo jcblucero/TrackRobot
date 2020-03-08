@@ -29,6 +29,8 @@ def CalculateScaledTrajectoryError( center_point, image_dimensions):
     raw_error = float(measured_value - desired_value)
 
     scaled_error = (raw_error / max_error) * 100.0
+    #now clip scaled_error so it is in range [-100,100] incase we get way off
+    scaled_error = max(min(scaled_error,100.0),-100.0)
 
     #print("Max Error = {}, Raw Error = {}, Scaled Error = {}".format(max_error, raw_error,scaled_error) )
 
