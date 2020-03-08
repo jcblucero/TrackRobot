@@ -12,6 +12,7 @@ SIGNAL_PIN = 21
 #TODO: If framerate is issue in future, see if setting sensor_mode has an affect (lowers field of view)
 #picamera = PiCamera.PiCamera(resolution=(640,480), framerate=60.0)
 picamera = PiCamera.PiCamera(
+    #sensor_mode=6,
     #resolution='320x240',
     resolution='640x480',
     framerate=40.0)
@@ -19,7 +20,7 @@ picamera = PiCamera.PiCamera(
 #picamera = PiCamera.PiCamera(resolution=(640,480), framerate=60.0)
 #picamera = picamera.PiCamera(sensor_mode=6)
 
-picamera.framerate = 40
+#picamera.framerate = 40
 print("CameraFramerate {}".format(picamera.framerate))
 
 def PrintInitError():
@@ -55,17 +56,21 @@ def CapturePicture():
     picture_count += 1
     print("picture taken: {}".format(picture_count))
     picamera.capture('low_res_pic_{}.jpg'.format(picture_count))
-    """Recording off
-    picamera.start_recording('low_res_vid_{}.h264'.format(picture_count))
+    #Recording off
+    #picamera.start_recording('low_res_vid_{}.h264'.format(picture_count))
+    picamera.start_recording('test_split1.h264')
+    #picamera.start_recording('test_split2.h264',splitter_port=2)
     picamera.wait_recording(4)
     #time.sleep(4)
-    picamera.stop_recording()
+    #picamera.stop_recording()
+    #picamera.stop_recording(splitter_port=2)
     print("done recording: {}".format(picture_count))
-    """
+    
     print("------")
                              
 
 #GPIO Pin is set pulled to ground. Take pictures/record on rising edge#
+"""
 Init()
 
 pi.set_mode(SIGNAL_PIN, pigpio.INPUT)
@@ -83,7 +88,10 @@ while True:
 
 """
 CapturePicture()
-"""
+#CapturePicture()
+picamera.stop_recording()
+#picamera.stop_recording(splitter_port=2)
+
     #Pulled down at start
     #if pi.read(SIGNAL_PIN) == 0:
     #    signal_low = True
