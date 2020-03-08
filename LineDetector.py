@@ -11,7 +11,7 @@ output_filename = 'OutputImages/output.jpg'
 output_folder = 'OutputImages/'
 
 img = cv.imread(input_filename)
-print("Image shape",img.shape)
+#print("Image shape",img.shape)
 #cv.imwrite(output_filename,img)
 
 #Colors for drawing on image
@@ -21,7 +21,7 @@ blue = [255,0,0]
 
 #Canny edge detection
 img_gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
-print("Gray Image Shape",img_gray.shape)
+#print("Gray Image Shape",img_gray.shape)
 #cv.imwrite(output_folder + "gray_image.jpg",img_gray)
 
 def nothing(x):
@@ -79,7 +79,7 @@ class PolarLine(object):
         right_x = img.shape[1] #columns
         pt1 = (left_x, int(self.predict_y(left_x)) )
         pt2 = (right_x, int(self.predict_y(right_x)) )
-        print("pt1,pt1",pt1,pt2)
+        #print("pt1,pt1",pt1,pt2)
         cv.line( img, pt1, pt2, color, 2)
         
 #
@@ -259,20 +259,20 @@ def FilterForTrackLaneLines(lines, probabilistic=False):
         clustering_lines = np.zeros( (lines.shape[0],2) )
         count = 0
         for line in lines:
-            print("Line #{}".format(count) )
+            #print("Line #{}".format(count) )
             coords = line[0]
             pt1 = (coords[0],coords[1])
             pt2 = (coords[2],coords[3])
 
             #Creating numpy matrix from tuple to feed to kmeans
             slope_intercept = ConvertToSlopeIntercept(coords)
-            print("Slope = {} , B = {} ".format(slope_intercept[0],slope_intercept[1]))
+            #print("Slope = {} , B = {} ".format(slope_intercept[0],slope_intercept[1]))
             clustering_lines[count] = np.array(slope_intercept)
             count += 1
 
     else:
         matrix_shape = (lines.shape[0],lines.shape[2])
-        print (lines.reshape(matrix_shape))
+        #print (lines.reshape(matrix_shape))
         clustering_lines = lines.reshape(matrix_shape)
 
     #Step 2 - Eliminate lines that are unlikely to be track lane lines
@@ -292,8 +292,8 @@ def FilterForTrackLaneLines(lines, probabilistic=False):
         selection_array = (clustering_lines[:,1] <= lower_angle_threshold) | (clustering_lines[:,1] >= upper_angle_threshold)
         clustering_lines = clustering_lines[selection_array] 
 
-    print ("filtered clustering lines")
-    print (clustering_lines)
+    #print ("filtered clustering lines")
+    #print (clustering_lines)
 
     #Raise an exception if there are less than the two lines after filtering. Centering assumes atleast 2
     if clustering_lines.shape[0] < 2:
@@ -325,7 +325,7 @@ def FilterForTrackLaneLines(lines, probabilistic=False):
         #best_lines[:,1] = np.arctan(centers_xy[:,0]/centers_xy[:,1])
         best_lines[:,1] = np.arctan2(centers_xy[:,0],centers_xy[:,1])
 
-        print("KMeans Centers -- \n{}".format(best_lines))
+        #print("KMeans Centers -- \n{}".format(best_lines))
 
     return best_lines
 
@@ -695,8 +695,8 @@ def LaneCenterFinder(test_img):
     cv.imwrite(output_folder + "line_img2.jpg",test_img)
 
     #Print output
-    CalculateScaledTrajectoryError(center_point, img_gray.shape)
-    print("Predicted center {}, Expected Center {}".format(center_point, (img_gray.shape[0]/2,img_gray.shape[1]/2) ))
+    #CalculateScaledTrajectoryError(center_point, img_gray.shape)
+    #print("Predicted center {}, Expected Center {}".format(center_point, (img_gray.shape[0]/2,img_gray.shape[1]/2) ))
     
 
     return center_point

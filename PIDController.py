@@ -18,7 +18,7 @@ def CalculateRawError(measured, desired):
 # < 15 turns right. > 15 turns left when output to servo pwm.
 def CalculateScaledTrajectoryError( center_point, image_dimensions):
     
-    print("Image Dimensions {}".format(image_dimensions))
+    #print("Image Dimensions {}".format(image_dimensions))
 
     #We care about lateral error,since we are only steering left/right.
     #This means x direction (columns) of image
@@ -30,7 +30,7 @@ def CalculateScaledTrajectoryError( center_point, image_dimensions):
 
     scaled_error = (raw_error / max_error) * 100.0
 
-    print("Max Error = {}, Raw Error = {}, Scaled Error = {}".format(max_error, raw_error,scaled_error) )
+    #print("Max Error = {}, Raw Error = {}, Scaled Error = {}".format(max_error, raw_error,scaled_error) )
 
     return scaled_error
 
