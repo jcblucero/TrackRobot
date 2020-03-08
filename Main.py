@@ -35,7 +35,6 @@ def command_robot(center_finder_input,lateral_pwm):
 
     current_duty_cycle = lateral_pwm.GetDutyCycle()
     global lane_error_count
-    print(lane_error_count)
     
     #We may fail finding the lines, in which case we leave lateral control to last command state
     try:
@@ -63,10 +62,20 @@ def command_robot(center_finder_input,lateral_pwm):
             cv.imwrite(output_folder + "lane_error_{}.jpg".format(lane_error_count),center_finder_input)
     
     #Output for testing
-    print(type(desired_pwm))
-    print("Desired PWM = {}".format(desired_pwm))
+    #print(type(desired_pwm))
+    #print("Desired PWM = {}".format(desired_pwm))
 
-def main_loop():
+#Create an h264 encoded video for raspian os
+def create_video_writer(filename,frame_size,fps):
+    fourcc = cv.VideoWriter_fourcc(*'DIV4')
+    filename = filename + '.avi'
+    #fourcc = cv.VideoWriter_fourcc(*'MJPG')
+    #filename = filename + '.avi'
+    return cv.VideoWriter(filename, fourcc, fps, frame_size)
+    
+
+main_loop_count = 0
+def main_loop(step_count = 100):
     #Init Servo and set to nuetral
     #servo_motor.Init()
     lateral_pwm = servo_motor.ServoMotor(STEERING_GPIO_PIN,
@@ -84,30 +93,40 @@ def main_loop():
     global lane_error_count
     lane_error_count = 0
 
+    global main_loop_count
+    main_loop_count += 1
+
 
     #window_name = "CameraBuffer"
     #cv.namedWindow(window_name)
 
     camera_buffer = RobotCamera.CameraBuffer()
-    RobotCamera.camera.start_recording(camera_buffer, 'rgb')
+    RobotCamera.camera.start_recording(camera_buffer, 'bgr', resize=(320,240))
+    RobotCamera.camera.start_recording('TrackDC_Video_{}.h264'.format(main_loop_count), splitter_port=2)
     #my_image = np.ones( (240,320), dtype=np.uint8)
     keypressed = None
-    count = 100
+    #count = 100
+
+    #Create video writer
+    #video_writer = create_video_writer( 'track_video_{}'.format(main_loop_count), (240,320), 30)
+    #create_video_writer(filename,frame_size,fps):
 
     #Timing and loop
     timec1 = time.clock()
     timet1 = time.time()
-    for i in range(count):
+    for i in range(step_count):
         if keypressed == 'q':
             break
-        my_image = camera_buffer.read()
+        #my_image = camera_buffer.read()
         #cv.imshow(window_name,my_image)
         #keypressed = cv.waitKey(50)
         #print(keypressed)
         #time.sleep(1)
         RobotCamera.camera.wait_recording()
+        my_image = camera_buffer.read()
 
         command_robot(my_image,lateral_pwm)
+        #video_writer.write(my_image)        
         
     timec2 = time.clock()
     timet2 = time.time()
@@ -115,7 +134,9 @@ def main_loop():
     print("time.clock", timec2-timec1, "time.time",timet2-timet1)
 
     #Cleanup Phase
+    #video_writer.release()
     RobotCamera.camera.stop_recording()
+    RobotCamera.camera.stop_recording(splitter_port=2)
     throttle_pwm.SetDutyCycle(throttle_pwm.NUETRAL)
     lateral_pwm.SetDutyCycle(lateral_pwm.NUETRAL)
     #servo_motor.DeInit()
@@ -159,16 +180,24 @@ def test_loop():
     servo_motor.pi.set_pull_up_down(SIGNAL_PIN,servo_motor.pigpio.PUD_DOWN)
 
     global THROTTLE_SPEED
+
+    test_loop_i = 0
+    step_count = 100
     
     while True:
                 
         if servo_motor.pi.wait_for_edge(SIGNAL_PIN,servo_motor.pigpio.RISING_EDGE,10.0):
             time.sleep(1)
-            THROTTLE_SPEED += 0.1
-            print("Calling main THROTTLE_SPEED = {}...".format(THROTTLE_SPEED))
-            if THROTTLE_SPEED >=17.2:
+            test_loop_i += 1
+            if (test_loop_i%2) == 1:
                 THROTTLE_SPEED = 16.5
-            main_loop()
+                step_count = 300
+            else:
+                THROTTLE_SPEED = 17.0
+                step_count = 150
+            print("Calling main THROTTLE_SPEED = {}...".format(THROTTLE_SPEED))
+
+            main_loop(step_count)
 
 
 if __name__ == "__main__":
