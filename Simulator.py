@@ -92,10 +92,6 @@ class RobotModel:
     # 3) move robot
     def step(self):
 
-        #Hardcoding throttle pwm for simplicity now
-        #TODO: make robot parameter later
-        #throttle_pwm_command = 16.5
-
         #calculate error and get lateral control pwm
         robot_position = (self.x,self.y)
         image_point = camera_transform(robot_position)
@@ -139,7 +135,7 @@ class RobotModel:
 #Simulate robot motion using PID control
 def simulate(timesteps=40):
 
-    robot_model = RobotModel(x=0,throttle_pwm=19.5,time_step_size = 0.05)   
+    robot_model = RobotModel(x=0,throttle_pwm=18.5,time_step_size = 0.05)   
  
     for i in range(timesteps):
         

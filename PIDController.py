@@ -77,8 +77,10 @@ def LateralPIDControl( measured_point, image_dimensions, current_duty_cycle, thr
     #19.0, 0.165
     #19.5, 0.15
     #20.0, 0.13
+    #Second order according to above points
+    Kp = (0.0235 * throttle_pwm**2) - (0.9347 * throttle_pwm) + 9.43#9.4421
     
-    Kp = 0.15
+    #Kp = 0.15
 
     scaled_error = CalculateScaledTrajectoryError(measured_point,image_dimensions)    
 
