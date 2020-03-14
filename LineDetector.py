@@ -2,9 +2,10 @@ import cv2 as cv
 import numpy as np
 import math as math
 import time
+import VideoPlayer
 
 #Global Input Files (for testing)
-input_filename = 'InputImages/low_res_pic_28.jpg'
+input_filename = 'InputImages/low_res_pic_14.jpg'
 #input_filename = 'low_res_pic_1.jpg'
 #input_filename = 'lane_error_5.jpg'
 output_filename = 'OutputImages/output.jpg'
@@ -215,7 +216,7 @@ def FilterPipeline(img_gray):
        borderType=cv.BORDER_REPLICATE)
     #gauss_img = cv.GaussianBlur(img_gray,(5,5),0,0) #sigmaX/Y as 0's lets func determine
     #filtered_img = cv.medianBlur(img_gray,kernel_size)
-    #cv.imwrite(output_folder + "filtered_image.jpg",filtered_img)
+    cv.imwrite(output_folder + "filtered_image.jpg",filtered_img)
 
     #Step 3 of Filter - Canny Edge Detector
     #edges = cv.Canny(filtered_img,lower_canny_threshold,upper_canny_threshold)
@@ -431,219 +432,13 @@ def DrawLines2(img,lines,probabilistic):
             cv.line( img, pt1, pt2, red, width)
 
 
-def DrawLinesThetaRho(img,lines):
-    red = [0,0,255]
-    width = 3
-    
-    if lines is None:
-        print( "No lines found")
-        return 
-
-    print("Lines Shape:")
-    print(lines.shape)
-    max_lines_to_print = 2
-    count = 0
-    for line in lines:
-        print("Line #{}".format(count) )
-        count += 1
-        ##Adapted from OpenCv HoughLines Tutorial
-        rho = line[0][0]
-        theta = line[0][1]
-        print("Theta {}, Rho {}".format(theta,rho) )
-        a = math.cos(theta)
-        b = math.sin(theta)
-        x0 = a*rho
-        y0 = b*rho
-        pt1 = ( int(x0 + 5000*(-b)), int(y0 + 5000*(a)) )
-        pt2 = ( int(x0 - 5000*(-b)), int(y0 - 5000*(a) ))
-        cv.line( img, pt1, pt2, red, width)
-
-    #####
-    # Xcos(theta) + Ysin(theta) = r
-    matrix_shape = (lines.shape[0],lines.shape[2])
-    print (lines.reshape(matrix_shape))
-    clustering_lines = lines.reshape(matrix_shape)
-    print ("clustering_Lines shape {}".format(clustering_lines.shape))
-
-    #Filter lines that are too horizontal (60-120deg, +-30deg of 90 which is horizontal)
-    lower_angle_threshold = 60 * np.pi/180
-    upper_angle_threshold = 120 * np.pi/180
-
-    selection_array = (clustering_lines[:,1] <= lower_angle_threshold) | (clustering_lines[:,1] >= upper_angle_threshold)
-    clustering_lines = clustering_lines[selection_array] 
-    print (clustering_lines)
-
-    #Convert to x/y form using sin/cos to avoid discontinuities in (theta 0-2pi, and rho negative distance)
-    xy_clustering = np.copy(clustering_lines)
-    xy_clustering[:,0] = np.sin(clustering_lines[:,1]) * clustering_lines[:,0] #y's = sin(theta) * rho
-    xy_clustering[:,1] = np.cos(clustering_lines[:,1]) * clustering_lines[:,0] #x's = cos(theta) * rho
-    
-    #kmeans clustering
-    criteria = (cv.TERM_CRITERIA_MAX_ITER, 10, 0.001)
-    xy_clustering = np.float32(xy_clustering)
-    ret,label,centers_xy=cv.kmeans(xy_clustering,2,None,criteria,10,cv.KMEANS_RANDOM_CENTERS)
-
-    #convert back to theta/rho
-    centers=np.copy(centers_xy)
-    centers[:,0] = np.sqrt(centers_xy[:,0]*centers_xy[:,0] + centers_xy[:,1]*centers_xy[:,1]) #rho
-    centers[:,1] = np.arctan(centers_xy[:,0]/centers_xy[:,1])
-
-    print("KMeans Centers -- \n{}".format(centers))
-
-    """
-    #kmeans clustering
-    criteria = (cv.TERM_CRITERIA_MAX_ITER, 10, 0.001)
-    clustering_lines = np.float32(clustering_lines)
-    ret,label,centers=cv.kmeans(clustering_lines,2,None,criteria,10,cv.KMEANS_RANDOM_CENTERS)
-    print("KMeans Centers -- \n{}".format(centers))
-    
-    #Translate Line to points -- Y = (r-Xcos(theta)) / sin(theta)
-    
-    line1 = centers[0]
-    rho1,theta1 = (line1[0],line1[1])
-    line2 = centers[1]
-    rho2,theta2 = (line2[0],line2[1])
-    
-    middle_x = int(img.shape[1] / 2)
-    line1_point = (middle_x, int( (rho1-(middle_x*math.cos(theta1)))/math.sin(theta1) ))
-    line2_point = (middle_x, int( (rho2-(middle_x*math.cos(theta2)))/math.sin(theta2) ))
-    """
-    #Find x's instead of y's for vertical orientation
-    #X = (r-Ysin(theta)) / cos(theta)
-    line1 = centers[0]
-    rho1,theta1 = (line1[0],line1[1])
-    line2 = centers[1]
-    rho2,theta2 = (line2[0],line2[1])
-
-    middle_y = int(img.shape[0] / 2)
-    line1_point = ( int( (rho1-(middle_y*math.sin(theta1)))/math.cos(theta1) ), middle_y)
-    line2_point = ( int( (rho2-(middle_y*math.sin(theta2)))/math.cos(theta2) ), middle_y)
-
-    center_point = FindCenter(line1_point,line2_point)
-    cv.circle(img, center_point, width, purple, thickness=3, lineType=8, shift=0)
-
-    CalculateScaledTrajectoryError(center_point, img.shape)
-
-    blue = [255,0,0]
-    print("line1_point")
-    print(line1_point)
-
-    print("Predicted center {}, Expected Center {}".format(center_point, (img.shape[0]/2,img.shape[1]/2) ))
-    print(center_point)
-
-    cv.circle(img, line1_point, width, blue, thickness=3, lineType=8, shift=0)
-    cv.circle(img, line2_point, width, blue, thickness=3, lineType=8, shift=0)
-        
-    
-def DrawLines(img,lines):
-    red = [0,0,255]
-    width = 3
-    
-    if lines is None:
-        print( "No lines found")
-        return 
-
-    print("Lines Shape:")
-    print(lines.shape)
-    max_lines_to_print = 2
-    count = 0
-    for line in lines:
-        print("Line #{}".format(count) )
-        count += 1
-        coords = line[0]
-        pt1 = (coords[0],coords[1])
-        pt2 = (coords[2],coords[3])
-        cv.line(img, pt1, pt2, red, width)
-        print("point 1 = {},{} ; point 2 = {},{}".format(pt1[0],pt1[1],pt2[0],pt2[1]))
-
-        slope_intercept = ConvertToSlopeIntercept(coords)
-        print("Slope = {} , B = {} ".format(slope_intercept[0],slope_intercept[1]))
-
-        #Creating numpy matrix from tuple to feed to kmeans
-        if count==1:
-            clustering_lines = np.array( slope_intercept )
-        else:
-            clustering_lines = np.vstack((np.array(slope_intercept),clustering_lines))
-
-        
-        #if(count == max_lines_to_print):
-        #    break
-    ############################
-    print(clustering_lines)
-    
-    #Filter lines that are too horizontal (+-30deg of 0 which is horizontal)
-    #tan(theta) = opp/adj -> rise/run -> slope. tan(theta) == slope
-    lower_angle_threshold = np.tan(30 * np.pi/180)
-    upper_angle_threshold = np.tan(-30 * np.pi/180)
-
-    selection_array = (clustering_lines[:,0] >= lower_angle_threshold) | (clustering_lines[:,0] <= upper_angle_threshold)
-    clustering_lines = clustering_lines[selection_array] 
-    print ("filtered clustering lines")
-    print (clustering_lines)
-
-
-    #kmeans clustering
-    criteria = (cv.TERM_CRITERIA_MAX_ITER, 10, 0.001)
-    clustering_lines = np.float32(clustering_lines)
-    ret,label,centers=cv.kmeans(clustering_lines,2,None,criteria,10,cv.KMEANS_RANDOM_CENTERS)
-
-    print("KMeans Centers -- \n{}".format(centers))
-    print(img.shape)
-
-    #get line1 and line2 and calculate mid-points assuming center x
-    line1 = centers[0]
-    line2 = centers[1]
-    #actually doing middle y (to get x) because orientation is vertical now
-    """
-    middle_x = int(img.shape[1] / 2)
-    line1_point = (middle_x, int(line1[0]*middle_x + line1[1]))
-    line2_point = (middle_x, int(line2[0]*middle_x + line2[1]))
-    """
-    #x = (y-b) / m
-    middle_y = int(img.shape[0] / 2)
-    line1_point = (int( (middle_y-line1[1])/line1[0]), middle_y)
-    line2_point = (int( (middle_y-line2[1])/line2[0]), middle_y)
-    blue = [255,0,0]
-    print("line1_point")
-    print(line1_point)
-
-    cv.circle(img, line1_point, width, blue, thickness=3, lineType=8, shift=0)
-    cv.circle(img, line2_point, width, blue, thickness=3, lineType=8, shift=0)
-
-#Calculate the raw error which will eventually be used by PID controller for steering
-#left/right steering only, so only 1d input
-def CalculateRawError(measured, desired):
-    return desired - measured
-
-#Calculate the error which will be used to feed PID controller for steering
-#We use a scaled error between [-100.0,100.0] (float) so that PID is impartial to viewing dimensions
-#Inputs: center_point - (x,y) pair  - center of lines found through line detection
-#       image_dimensions - tuple - dimensions of image fed by camera to line detection
-#Outputs: Float between [-100.0,100.0] representing error. (by convention, negative means measured center is right of image center)
-def CalculateScaledTrajectoryError( center_point, image_dimensions):
-    
-    print("Image Dimensions {}".format(image_dimensions))
-
-    #We care about lateral error,since we are only steering left/right.
-    #This means x direction (columns) of image
-    measured_value = center_point[0] #x index is 0
-    desired_value = int(image_dimensions[1] / 2) #TODO: check this index
-    max_error = desired_value #TODO: check this index
-
-    raw_error = float(desired_value - measured_value)
-
-    scaled_error = (raw_error / max_error) * 100.0
-
-    print("Max Error = {}, Raw Error = {}, Scaled Error = {}".format(max_error, raw_error,scaled_error) )
-
-    return scaled_error
-
-#Find the center point of track lane line in image    
-#   Return as (x,y) - where y is assumed to be half the image height
-def LaneCenterFinder(test_img):
+#Given image, find the track lines and return grouped lines (merged)
+# Probabilistic - determines whether lines found using HoughLInes or HoughLinesP
+#Returns: list of lines (lines as either YinterceptLine class or PolarLine depending)
+def FindAndGroupLines(test_img, probabilistic = False):
 
     #Probabilistic determins if we use HoughLines or HoughLinesP
-    probabilistic = False
+    #probabilistic = False
 
     #Current filter pipeline designed for 320x240, have to downsample mannually (future config camera)
     #test_img = cv.pyrDown(src=test_img)
@@ -682,9 +477,15 @@ def LaneCenterFinder(test_img):
         line.draw(test_img)
     #prediction_lines = FilterForTopToBotLines(prediction_lines,test_img.shape)
     #prediction_lines = [line1]
+    return prediction_lines
+
+#Find the center point of track lane line in image    
+#   Return as (x,y) - where y is assumed to be half the image height
+def LaneCenterFinder(test_img, prediction_lines):
 
     #Step 4 - Find center
-    middle_y = int(img_gray.shape[0] / 2)
+    #print("Lane Center Finder test_img shape", test_img.shape)
+    middle_y = int(test_img.shape[0] / 2)
     #center_point = PredictLinesCenterX(middle_y,line1,line2)
     center_point = PredictLinesCenterX(middle_y,prediction_lines)
 
@@ -701,6 +502,27 @@ def LaneCenterFinder(test_img):
 
     return center_point
     
+def play_video_with_line_detection(video_file):
+    video_player = VideoPlayer.VideoPlayer(video_file)
+
+    ret, next_frame = video_player.next_frame()
+    quit = False
+    while (ret == True) and (quit == False):
+        ##PROCESS FRAME##
+        #Current filter pipeline designed for 320x240, have to downsample mannually (future config camera)
+        downsampled_orig = cv.pyrDown(src=next_frame)
+        
+        best_lines = FindAndGroupLines(downsampled_orig)
+        LaneCenterFinder(downsampled_orig,best_lines)
+        ##################
+
+        #cv.imshow('frame',next_frame)
+        quit = video_player.show_frame(downsampled_orig)
+        ret, next_frame = video_player.next_frame()
+        
+        #print next_frame.shape
+
+def play_video_frame_by_frame(video_file):
 
 if __name__ == "__main__":
     #RunCannyTuningWindow(img_gray)
@@ -751,7 +573,12 @@ if __name__ == "__main__":
         print("Error in expected shape. Got {} expexted {}".format(downsampled_orig.shape[0:2],(240,320)) )
         exit()
     #Test(img_gray)
-    LaneCenterFinder(downsampled_orig)
+    print ("downsampled_orig.shape",downsampled_orig.shape)
+    best_lines = FindAndGroupLines(downsampled_orig)
+    LaneCenterFinder(downsampled_orig,best_lines)
+
+    print("---Video Playback---")
+    play_video_with_line_detection('InputImages/TrackDC_Intercepting_Lines.h264')
 
 
 

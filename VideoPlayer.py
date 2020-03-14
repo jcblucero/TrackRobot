@@ -18,7 +18,7 @@ class VideoPlayer(object):
     #Returns next frame of video as an image (np.array) 
     def next_frame(self):
         ret, frame = self.cap.read()
-        return frame
+        return ret, frame
 
     #Plays the whole video using cv.imshow
     #stops when user hits q
@@ -34,12 +34,25 @@ class VideoPlayer(object):
                 break       
 
     #Continuosly loop until the specified key is pressed, then return
+    #if q is pressed, it will return (quit functionality). Cannot use q as input
     def wait_for_key(self,key_char):
         keystroke = cv.waitKey(10)
         while (keystroke & 0xFF) != ord(key_char):
+            if(keystroke & 0xFF == ord('q')):
+                return 'q'
             keystroke = cv.waitKey(50)
-            pass
             #Do nothing
+
+        return 'none'
+
+    #Display a frame using cv.imshow and wait 50ms for frame to appear
+    #returns true if q pressed
+    def show_frame(self,frame):
+        cv.imshow('frame',frame)
+        if cv.waitKey(50) & 0xFF == ord('q'):
+            return True
+        else:
+            return False     
 """
 #cap = cv.VideoCapture('TrackDC_Video_4.h264')
 cap = cv.VideoCapture('TrackDC_Intercepting_Lines.h264')
@@ -67,8 +80,11 @@ if __name__ == "__main__":
     video_player = VideoPlayer(file_name)
     #video_player.play_all()
     for i in range(10):
-        next_frame = video_player.next_frame()
+        ret, next_frame = video_player.next_frame()
         cv.imshow('frame',next_frame)
-        video_player.wait_for_key('n')
+        ret_val = video_player.wait_for_key('n')
+        if ret_val == 'q':
+            break
+
 
 

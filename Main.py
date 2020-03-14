@@ -39,7 +39,8 @@ def command_robot(center_finder_input,lateral_pwm):
     #We may fail finding the lines, in which case we leave lateral control to last command state
     try:
         #Find the center observation for lateral control
-        lane_center = LineDetector.LaneCenterFinder(center_finder_input)
+        grouped_lines = FindAndGroupLines(center_finder_input, probabilistic = False):
+        lane_center = LineDetector.LaneCenterFinder(center_finder_input, grouped_lines)
 
         #Feed to lateral control and get PWM to send to servo
         image_dimensions = center_finder_input.shape
