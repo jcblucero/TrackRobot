@@ -216,7 +216,7 @@ def FilterPipeline(img_gray):
        borderType=cv.BORDER_REPLICATE)
     #gauss_img = cv.GaussianBlur(img_gray,(5,5),0,0) #sigmaX/Y as 0's lets func determine
     #filtered_img = cv.medianBlur(img_gray,kernel_size)
-    cv.imwrite(output_folder + "filtered_image.jpg",filtered_img)
+    #cv.imwrite(output_folder + "filtered_image.jpg",filtered_img)
 
     #Step 3 of Filter - Canny Edge Detector
     #edges = cv.Canny(filtered_img,lower_canny_threshold,upper_canny_threshold)
@@ -493,7 +493,7 @@ def LaneCenterFinder(test_img, prediction_lines):
     #For testing purposes
     cv.circle(test_img, center_point, 3, blue, thickness=3, lineType=8, shift=0)
     #DrawLines2(test_img, lines,probabilistic)
-    cv.imwrite(output_folder + "line_img2.jpg",test_img)
+    #cv.imwrite(output_folder + "line_img2.jpg",test_img)
 
     #Print output
     #CalculateScaledTrajectoryError(center_point, img_gray.shape)
@@ -522,7 +522,7 @@ def play_video_with_line_detection(video_file):
         
         #print next_frame.shape
 
-def play_video_frame_by_frame(video_file):
+#def play_video_frame_by_frame(video_file):
 
 if __name__ == "__main__":
     #RunCannyTuningWindow(img_gray)

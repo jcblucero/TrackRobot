@@ -39,7 +39,7 @@ def command_robot(center_finder_input,lateral_pwm):
     #We may fail finding the lines, in which case we leave lateral control to last command state
     try:
         #Find the center observation for lateral control
-        grouped_lines = FindAndGroupLines(center_finder_input, probabilistic = False):
+        grouped_lines = LineDetector.FindAndGroupLines(center_finder_input, False)
         lane_center = LineDetector.LaneCenterFinder(center_finder_input, grouped_lines)
 
         #Feed to lateral control and get PWM to send to servo
@@ -190,12 +190,24 @@ def test_loop():
         if servo_motor.pi.wait_for_edge(SIGNAL_PIN,servo_motor.pigpio.RISING_EDGE,10.0):
             time.sleep(1)
             test_loop_i += 1
-            if (test_loop_i%2) == 1:
+
+            
+            loop_mod = test_loop_i % 3
+            if (loop_mod) == 1:
+                PIDController.PID_count = loop_mod
                 THROTTLE_SPEED = 16.5
-                step_count = 450
-            else:
+                step_count = 100
+            elif (loop_mod) == 2:
+                PIDController.PID_count = loop_mod
                 THROTTLE_SPEED = 17.0
-                step_count = 150
+                step_count = 200
+            else:
+                PIDController.PID_count = loop_mod
+                THROTTLE_SPEED = 17.5
+                step_count = 100
+            
+            THROTTLE_SPEED = 17.0
+            step_count = 200
             print("Calling main THROTTLE_SPEED = {}...".format(THROTTLE_SPEED))
 
             main_loop(step_count)

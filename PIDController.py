@@ -56,9 +56,11 @@ def NormalizeErrorToServoRange(percent_error):
 #   image_dimensions - tuple - dimensions of image fed by camera to line detection
 #   current_duty_cycle - float - current PWM duty cycle on controller
 #   last_error - float - error from last call to LateralPIDControl. Used for Derivative calc
+PID_count = 0
 def LateralPIDControl( measured_point, image_dimensions, current_duty_cycle, throttle_pwm):
 
-
+    global PID_count
+    #PID_count += 1
     #Simulator tried 0.15 for 20.0 PWM @ Halfspeed
     # and 1.0 for 16.5 @ halfspeed
     # Assuming linear equation y=mx+b: m=-0.2428, b=5
@@ -78,7 +80,15 @@ def LateralPIDControl( measured_point, image_dimensions, current_duty_cycle, thr
     #19.5, 0.15
     #20.0, 0.13
     #Second order according to above points
-    Kp = (0.0235 * throttle_pwm**2) - (0.9347 * throttle_pwm) + 9.43#9.4421
+    if(PID_count) == 1:
+        Kp = (0.0235 * throttle_pwm**2) - (0.9347 * throttle_pwm) + 9.43#9.4421
+    elif(PID_count) == 2:
+        Kp = 0.25
+    else:
+        Kp = 0.15
+
+    #print(Kp)
+    
     
     #Kp = 0.15
 

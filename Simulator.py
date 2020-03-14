@@ -135,7 +135,7 @@ class RobotModel:
 #Simulate robot motion using PID control
 def simulate(timesteps=40):
 
-    robot_model = RobotModel(x=0,throttle_pwm=18.5,time_step_size = 0.05)   
+    robot_model = RobotModel(x=0,throttle_pwm=17.2,time_step_size = 0.05)   
  
     for i in range(timesteps):
         
