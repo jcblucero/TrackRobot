@@ -57,9 +57,11 @@ def NormalizeErrorToServoRange(percent_error):
 #   current_duty_cycle - float - current PWM duty cycle on controller
 #   last_error - float - error from last call to LateralPIDControl. Used for Derivative calc
 PID_count = 0
+PID_prev_error = 0
 def LateralPIDControl( measured_point, image_dimensions, current_duty_cycle, throttle_pwm):
 
     global PID_count
+    global PID_prev_error
     #PID_count += 1
     #Simulator tried 0.15 for 20.0 PWM @ Halfspeed
     # and 1.0 for 16.5 @ halfspeed
@@ -80,23 +82,26 @@ def LateralPIDControl( measured_point, image_dimensions, current_duty_cycle, thr
     #19.5, 0.15
     #20.0, 0.13
     #Second order according to above points
+    """
     if(PID_count) == 1:
         Kp = (0.0235 * throttle_pwm**2) - (0.9347 * throttle_pwm) + 9.43#9.4421
     elif(PID_count) == 2:
         Kp = 0.25
     else:
         Kp = 0.15
-
+    """
     #print(Kp)
     
-    
-    #Kp = 0.15
+    Kp = 0.25
+    Kd = 0.2
 
-    scaled_error = CalculateScaledTrajectoryError(measured_point,image_dimensions)    
+    scaled_error = CalculateScaledTrajectoryError(measured_point,image_dimensions)
+    deriv = scaled_error - PID_prev_error
+    PID_prev_error = scaled_error    
 
     #Proportional Control
     #TODO: Future add Integral and Derivative for PID control
-    scaled_error = scaled_error * Kp
+    scaled_error = (scaled_error) * Kp + (deriv * Kd)
 
     #Normalize to the servo range for output
     return NormalizeErrorToServoRange(scaled_error)
