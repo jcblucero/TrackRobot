@@ -41,7 +41,7 @@ def model_halfspeed_throttle(pwm):
     #Assume a linear equation y=mx+b
     #where movement does not occur until 16.0% --/
     #velocity_mph = (pwm - 16) * 2.5
-    velocity_mph = (pwm - 15) * 2
+    velocity_mph = (pwm - 15) * 4
     velocity_mps = velocity_mph * MILES_TO_METERS_MULTIPLIER / 3600
 
     return velocity_mps
