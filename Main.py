@@ -192,7 +192,7 @@ def test_loop():
             test_loop_i += 1
 
             
-            loop_mod = test_loop_i % 3
+            loop_mod = test_loop_i % 2
             if (loop_mod) == 1:
                 PIDController.PID_count = loop_mod
                 THROTTLE_SPEED = 16.5
@@ -207,7 +207,7 @@ def test_loop():
                 step_count = 100
             
             THROTTLE_SPEED = 17.0
-            step_count = 200
+            step_count = 70#200
             print("Calling main THROTTLE_SPEED = {}...".format(THROTTLE_SPEED))
 
             main_loop(step_count)

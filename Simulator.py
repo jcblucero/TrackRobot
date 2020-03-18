@@ -9,6 +9,9 @@ import PIDController
 
 MILES_TO_METERS_MULTIPLIER = 1609.344
 
+def pwm_assert(pwm):
+    assert( (pwm >= 10.0) and (pwm <= 20.0) )
+
 #Models the steering servo
 #Steering servo range is of 70deg from 55-125 assuming car travels along +y-axis
 #and +x-axis is right, negative x-axis is left
@@ -16,7 +19,8 @@ MILES_TO_METERS_MULTIPLIER = 1609.344
 #pwm > 15 = turn left
 #Output steering angle in radians
 def model_steer_servo(pwm):
-
+    print(pwm)
+    pwm_assert(pwm)
     #We add a delay to the pwm command, because the servo doesn't act instantaneously
     #Use queue to get the correct delayed pwm signal
     #add current signal to queue, which will be popped in (size_of_queue) timesteps
@@ -27,10 +31,11 @@ def model_steer_servo(pwm):
     #y=mx+b solved for where:
     #(10,55),(20,125)
     turn_angle_deg = 7*delayed_pwm - 15
+    print("turn angle deg",turn_angle_deg,turn_angle_deg * (np.pi/180.0))
     return turn_angle_deg * (np.pi/180.)
 
 #Initialize delay stack to nuetral
-model_steer_servo.queue = deque([15.0] * 3)
+model_steer_servo.queue = deque([15.0] * 10)
 
 #Model throttle of traxxas on half speed setting (0-10mph assumed)
 #Through testing, minimum to move is 16.4% pwm
@@ -38,6 +43,7 @@ model_steer_servo.queue = deque([15.0] * 3)
 #Output velocity in meters/second
 def model_halfspeed_throttle(pwm):
 
+    pwm_assert(pwm)
     #Assume a linear equation y=mx+b
     #where movement does not occur until 16.0% --/
     #velocity_mph = (pwm - 16) * 2.5
@@ -133,10 +139,10 @@ class RobotModel:
         plt.show()
 
 #Simulate robot motion using PID control
-def simulate(timesteps=40):
+def simulate(timesteps=100):
 
-    robot_model = RobotModel(x=0,throttle_pwm=17.2,time_step_size = 0.05)   
- 
+    robot_model = RobotModel(x=0,throttle_pwm=17.0,time_step_size = 0.05)   
+    #PIDController.PID_count = 0
     for i in range(timesteps):
         
         robot_model.step()

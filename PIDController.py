@@ -48,7 +48,17 @@ def CalculateScaledTrajectoryError( center_point, image_dimensions):
 #   duty_cycle - float in range [10.0-20.0] - duty cycle to feed to servo motor for throttle/steering
 def NormalizeErrorToServoRange(percent_error):
     duty_cycle = 0.05 * percent_error + 15
-    return duty_cycle
+    return clip_pwm(duty_cycle)
+
+#Make sure we don't put egregious output to PWM
+#Only valid values are 10.0-20.0
+def clip_pwm(pwm):
+    if pwm > 20.0:
+        return 20.0
+    elif pwm < 10.0:
+        return 10.0
+    else:
+        return pwm
 
 # Determine what PWM duty cycle (as percent) to command to steering servo for lateral control
 # Inputs:
@@ -58,10 +68,12 @@ def NormalizeErrorToServoRange(percent_error):
 #   last_error - float - error from last call to LateralPIDControl. Used for Derivative calc
 PID_count = 0
 PID_prev_error = 0
+PID_cumulative_error = 0
 def LateralPIDControl( measured_point, image_dimensions, current_duty_cycle, throttle_pwm):
 
     global PID_count
     global PID_prev_error
+    global PID_cumulative_error
     #PID_count += 1
     #Simulator tried 0.15 for 20.0 PWM @ Halfspeed
     # and 1.0 for 16.5 @ halfspeed
@@ -92,16 +104,46 @@ def LateralPIDControl( measured_point, image_dimensions, current_duty_cycle, thr
     """
     #print(Kp)
     
-    Kp = 0.25
-    Kd = 0.2
-
+    #17.2
+    """
+    Kp = 0.24
+    Kd = 0.18
+    Ki = 0.0
+    """
+    #17.0 - GOOD w/ 3 delay
+    if(PID_count) == 1:
+        Kp = 0.25
+        Kd = 0.20
+        Ki = 0.0
+        
+    #17.0 - GOOD w/ 10 delay
+    else:
+        Kp = 0.07
+        Kd = 0.05
+        Ki = 0.0
+    
+    #17.5 - w/ 3 delay
+    """
+    Kp = 0.20
+    Kd = 0.16
+    Ki = 0.0
+    """
+    print("Kp,Kd,Ki",Kp,Kd,Ki)
+    #Get current error from process variable
     scaled_error = CalculateScaledTrajectoryError(measured_point,image_dimensions)
+    #calculate deriv/integral
     deriv = scaled_error - PID_prev_error
+    PID_cumulative_error += scaled_error
+    #save current error for derivative calculation
     PID_prev_error = scaled_error    
 
     #Proportional Control
     #TODO: Future add Integral and Derivative for PID control
-    scaled_error = (scaled_error) * Kp + (deriv * Kd)
+    p_error = scaled_error * Kp
+    pd_error = p_error + (deriv * Kd)
+    pid_error = pd_error + (PID_cumulative_error * Ki)
+    #scaled_error = (scaled_error) * Kp + (deriv * Kd) 
+    scaled_error = pid_error
 
     #Normalize to the servo range for output
     return NormalizeErrorToServoRange(scaled_error)
