@@ -35,7 +35,7 @@ def model_steer_servo(pwm):
     return turn_angle_deg * (np.pi/180.)
 
 #Initialize delay stack to nuetral
-model_steer_servo.queue = deque([15.0] * 10)
+model_steer_servo.queue = deque([15.0] * 4)
 
 #Model throttle of traxxas on half speed setting (0-10mph assumed)
 #Through testing, minimum to move is 16.4% pwm
@@ -47,7 +47,7 @@ def model_halfspeed_throttle(pwm):
     #Assume a linear equation y=mx+b
     #where movement does not occur until 16.0% --/
     #velocity_mph = (pwm - 16) * 2.5
-    velocity_mph = (pwm - 15) * 4
+    velocity_mph = (pwm - 15) * 4 for #20mph max
     velocity_mps = velocity_mph * MILES_TO_METERS_MULTIPLIER / 3600
 
     return velocity_mps
@@ -142,7 +142,7 @@ class RobotModel:
 def simulate(timesteps=100):
 
     robot_model = RobotModel(x=0,throttle_pwm=17.0,time_step_size = 0.05)   
-    #PIDController.PID_count = 0
+    PIDController.PID_count = 1
     for i in range(timesteps):
         
         robot_model.step()

@@ -206,8 +206,8 @@ def test_loop():
                 THROTTLE_SPEED = 17.5
                 step_count = 100
             
-            THROTTLE_SPEED = 17.0
-            step_count = 70#200
+            THROTTLE_SPEED = 16.5
+            step_count = 1000
             print("Calling main THROTTLE_SPEED = {}...".format(THROTTLE_SPEED))
 
             main_loop(step_count)
@@ -216,7 +216,7 @@ def test_loop():
 if __name__ == "__main__":
     time.sleep(1)
     servo_motor.Init()
-    #main_loop()
+    #main_loop(1000)
     #single_run()
     test_loop()
     servo_motor.DeInit()
