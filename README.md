@@ -26,21 +26,22 @@ The speed is controlled by sending a PWM to the Electronic Speed Control (ESC) o
 Block Diagram of System
 
 ### Parts List
-Traxxas Rustler XL-5(RC Car) with:
 
-   Brushed DC Motor
+1. Traxxas Rustler XL-5(RC Car) with:
+
+   - Brushed DC Motor
     
-   Electron Speed Control (ESC)
+   - Electron Speed Control (ESC)
     
-   Steering Servo
+   - Steering Servo
     
-   4200 mAh, 8.4 V, niMH battery
+   - 4200 mAh, 8.4 V, niMH battery
 
-Raspberry Pi 3b+
+2. Raspberry Pi 3b+
 
-Raspberry Pi Camera Module v2
+3. Raspberry Pi Camera Module v2
 
-16000 mAh, 2.4v Output, USB charger (to power raspberry pi)
+4. 16000 mAh, 2.4v Output, USB charger (to power raspberry pi)
 
 
 ### Controlling Traxxas RC Car
