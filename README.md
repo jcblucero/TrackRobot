@@ -11,10 +11,15 @@ This robot would help runners hit their target pace. By setting the robot at the
 
 ### Brief System Overview
 The robot uses an RC car as the chassis. A camera is mounted to the front in order to view the track and it's lane lines. 
+
 The camera is connected to a controller (raspberry pi), that does the image processing to find the lines.
-The controller determines the center of the line and centers on this point. 
-It centers itself using a PID controller, where error is calculated as the difference between the image center and the lane lines center.
+
+The controller determines the center of the line and uses PID control to keep itself centered on the line. 
+
+PID error is calculated as the difference between the image center and the lane lines center.
+
 The error is translated into a PWM to send to the steering servo.
+
 The speed is controlled by sending a PWM to the Electronic Speed Control (ESC) of the RC car. The ESC then sets the brushed DC motor to correct speed.
 
 
@@ -23,13 +28,13 @@ Block Diagram of System
 ### Parts List
 Traxxas Rustler XL-5(RC Car) with:
 
-    Brushed DC Motor
+   Brushed DC Motor
     
-    Electron Speed Control (ESC)
+   Electron Speed Control (ESC)
     
-    Steering Servo
+   Steering Servo
     
-    4200 mAh, 8.4 V, niMH battery
+   4200 mAh, 8.4 V, niMH battery
 
 Raspberry Pi 3b+
 
