@@ -1,7 +1,7 @@
 # TrackRobot
 RC Car to follow lines on a track
 
-#Introduction
+# Introduction
 The goal of this project is to create a robot that can follow the line around a 400 meter outdoor track and pace a runner. 
 
 ## Motivation
@@ -20,7 +20,7 @@ The speed is controlled by sending a PWM to the Electronic Speed Control (ESC) o
 
 Block Diagram of System
 
-#Parts List
+# Parts List
 Traxxas Rustler XL-5(RC Car) with:
     Brushed DC Motor
     Electron Speed Control (ESC)
@@ -32,7 +32,7 @@ Raspberry Pi Camera Module v2
 16000 mAh, 2.4v Output, USB charger (to power raspberry pi)
 
 
-#Controlling Traxxas RC Car
+# Controlling Traxxas RC Car
 In order to get the RC car moving, and traveling in the right direction, I had to understand how the steering and throttle motors were controlled.
 Under normal operation, the steering servo and ESC are plugged into the radio transceiver. The transceiver gets the radio control signal and transfers it over the wire to the ESC and steering motor.
 
