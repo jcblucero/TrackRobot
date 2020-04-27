@@ -4,6 +4,8 @@ RC Car to follow lines on a track
 ## Introduction
 The goal of this project is to create a robot that can follow the line around a 400 meter outdoor track and pace a runner. 
 
+[![Youtube Link](https://github.com/jcblucero/TrackRobot/blob/master/doc/PlayPic_V1.png)](https://youtu.be/8moRr2X9PXI)
+
 ### Motivation
 Often runners want to run 400 meters around a track at a specific pace, because different paces target different metabolic processes. 
 However, it can be very difficult to hit your prescribed pace. Run too fast and you will burnout or overwork, run too slow and you will not get the designated physical adaptations of the workout.
@@ -23,7 +25,8 @@ The error is translated into a PWM to send to the steering servo.
 The speed is controlled by sending a PWM to the Electronic Speed Control (ESC) of the RC car. The ESC then sets the brushed DC motor to correct speed.
 
 
-Block Diagram of System
+![Block Diagram of System](https://github.com/jcblucero/TrackRobot/blob/master/doc/TrackRobot.jpg)
+
 
 ### Parts List
 
@@ -54,4 +57,4 @@ The ESC has multiple modes according to the user manual. If in a mode with rever
 The steering motor uses the same signal (0-3v, 10-20% duty cycle, 100Hz) where 10% commands full left steering and 20% full right.
 
 Below image shows the signal in a nuetral position.
-
+![PWM Image](https://github.com/jcblucero/TrackRobot/blob/master/doc/TraxxasPwm.jpg)
