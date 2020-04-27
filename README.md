@@ -57,4 +57,5 @@ The ESC has multiple modes according to the user manual. If in a mode with rever
 The steering motor uses the same signal (0-3v, 10-20% duty cycle, 100Hz) where 10% commands full left steering and 20% full right.
 
 Below image shows the signal in a nuetral position.
+
 ![PWM Image](https://github.com/jcblucero/TrackRobot/blob/master/doc/TraxxasPwm.jpg)
