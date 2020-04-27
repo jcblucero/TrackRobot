@@ -53,7 +53,7 @@ Under normal operation, the steering servo and ESC are plugged into the radio tr
 
 I first looked at the ESC. It has 3 wires connected to the radio transceiver: power, ground, and signal. I connected the signal wire up to an oscilliscope to view waveform.
 I found a 100 Hz (10 milisecond) PWM signal that had a duty cycle with a range of 10%-20%, and voltage levels of 0-3v. 20% duty cycle indicated full throttle, 10% indicated full brake, and 15% indicated nuetral. 
-The ESC has multiple modes according to the user manual. If in a mode with reverse, then 10% will indicate reverse if coming from a nuetral (15%) position.
+In an ESC mode with reverse, then 10% will indicate reverse if coming from a nuetral (15%) position.
 The steering motor uses the same signal (0-3v, 10-20% duty cycle, 100Hz) where 10% commands full left steering and 20% full right.
 
 Below image shows the signal in a nuetral position.
