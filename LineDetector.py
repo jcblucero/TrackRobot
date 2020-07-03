@@ -4,30 +4,14 @@ import math as math
 import time
 import VideoPlayer
 
-#Global Input Files (for testing)
-input_filename = 'InputImages/low_res_pic_14.jpg'
-#input_filename = 'low_res_pic_1.jpg'
-#input_filename = 'lane_error_5.jpg'
-output_filename = 'OutputImages/output.jpg'
+#Global Output folder (for testing)
 output_folder = 'OutputImages/'
-
-img = cv.imread(input_filename)
-#print("Image shape",img.shape)
-#cv.imwrite(output_filename,img)
 
 #Colors for drawing on image
 green = [0,255,0]
 purple = [255,0,255]
 blue = [255,0,0]
 
-#Canny edge detection
-img_gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
-#print("Gray Image Shape",img_gray.shape)
-#cv.imwrite(output_folder + "gray_image.jpg",img_gray)
-
-def nothing(x):
-    pass
-#
 ### Classes
 
 class YInterceptLine(object):
@@ -82,107 +66,6 @@ class PolarLine(object):
         pt2 = (right_x, int(self.predict_y(right_x)) )
         #print("pt1,pt1",pt1,pt2)
         cv.line( img, pt1, pt2, color, 2)
-        
-#
-###
-
-#Canny Tuning Window
-#Input - Grayscale Image
-#Creates a window with slider bars for tuning a canny edge detector with gaussian filter. 
-#Window displays output canny image
-def RunCannyTuningWindow(img_gray):
-    window_name = "Canny Edge Detector"
-    cv.namedWindow(window_name)
-
-    #parameters to tune
-    gauss_kernel_size = 3    
-    gauss_sigma = 10
-    lower_canny_thresh = 100
-    upper_canny_thresh = 200
-    canny_kernel_size = 3
-    dilate_size = 1
-
-    #strings 
-    str_gauss_kernel_size = "gauss_kernel_size"
-    str_gauss_sigma = "gauss_sigma"
-    str_lower_canny_thresh = "lower_canny_thresh"
-    str_upper_canny_thresh = "upper_canny_thresh"
-    str_canny_kernel_size = "canny_kernel_size"
-    str_dilate_size = "dilate_size"
-    
-    cv.createTrackbar(str_gauss_kernel_size,window_name,gauss_kernel_size,50,nothing)
-    cv.createTrackbar(str_gauss_sigma,window_name,gauss_sigma,100,nothing)
-    cv.createTrackbar(str_lower_canny_thresh,window_name,lower_canny_thresh,400,nothing)
-    cv.createTrackbar(str_upper_canny_thresh,window_name,upper_canny_thresh,400,nothing)
-    cv.createTrackbar(str_canny_kernel_size,window_name,canny_kernel_size,50,nothing)
-    cv.createTrackbar(str_dilate_size,window_name,dilate_size,20,nothing)
-   
-    #find center of shape and work on small sectin in center
-    #Only do this for 1080/1920
-    rows = img_gray.shape[0]
-    cols = img_gray.shape[1]
-    #Downsample to some size. Size input is COLS then ROWS
-    #downsample_size = (128,96) apparently you can't downsample more than 1/2 size at a time...
-    img_gray = cv.pyrDown(src=img_gray, dst=img_gray ) #defaults to half size
-    #img_gray = cv.pyrDown(src=img_gray, dst=img_gray )
-
-    #print("Rows/Cols ({},{}), Center Row/Col ({},{})".format(rows,cols,center_row,center_col))
-    if(rows == 1080) and (cols == 1920):
-        center_row = int(rows/2)
-        center_col = int(cols/2)
-        w_length = 350
-        print("Rows/Cols ({},{}), Center Row/Col ({},{})".format(rows,cols,center_row,center_col))
-        img_window = img_gray[center_row-w_length:center_row+w_length,center_col-w_length:center_col+w_length]
-    else:
-        print("Rows/Cols ({},{})".format(rows,cols))
-        img_window = img_gray
-
-    while(1):
-        #cv.imshow(window_name,
-        cv.waitKey(1000)
-        #print("gauss Kernal size {}".format(gauss_kernel_size))
-        gauss_kernel_size = cv.getTrackbarPos(str_gauss_kernel_size,window_name)
-        dilate_size = cv.getTrackbarPos(str_dilate_size,window_name)
-        if (gauss_kernel_size % 2)==0:
-            gauss_kernel_size += 1    
-        gauss_sigma = cv.getTrackbarPos(str_gauss_sigma,window_name) / 10.0
-        lower_canny_thresh = cv.getTrackbarPos(str_lower_canny_thresh,window_name) 
-        upper_canny_thresh = cv.getTrackbarPos(str_upper_canny_thresh,window_name) 
-        canny_kernel_size = cv.getTrackbarPos(str_canny_kernel_size,window_name) 
-        if (canny_kernel_size % 2)==0:
-            canny_kernel_size += 1
-        gauss_kernel = (gauss_kernel_size,gauss_kernel_size)
-        canny_kernel = (canny_kernel_size,canny_kernel_size)
-
-        #Dilate to get max within kernel
-        gauss_img = img_window
-        dilate_kernel = cv.getStructuringElement(cv.MORPH_RECT, (dilate_size*2+1,dilate_size*2+1) )
-        gauss_img = cv.dilate(src=gauss_img, kernel=dilate_kernel)
-        
-        gauss_img = cv.GaussianBlur(
-            src=gauss_img,ksize=gauss_kernel, sigmaX=gauss_sigma, sigmaY=gauss_sigma,\
-            borderType=cv.BORDER_REPLICATE)
-        #gauss_img = cv.medianBlur(gauss_img,gauss_kernel_size)
-        #gauss_img = cv.blur(
-        #    src=gauss_img,ksize=gauss_kernel,borderType=cv.BORDER_REPLICATE)
-
-        """
-        #Dilate to get max within kernel
-        #gauss_img = img_window
-        dilate_kernel = cv.getStructuringElement(cv.MORPH_RECT, (dilate_size*2+1,dilate_size*2+1) )
-        gauss_img = cv.dilate(src=gauss_img, kernel=dilate_kernel)
-        """
-        edge_img = cv.Canny(
-            image=gauss_img,threshold1=lower_canny_thresh,threshold2=upper_canny_thresh, \
-            apertureSize=canny_kernel_size)
-        #edge_img = cv.dilate(src=edge_img, kernel=dilate_kernel)
-        #print(canny_kernel_size)
-        #stack images so they can be displayed in one window
-        horizontal_stack = np.hstack((gauss_img,edge_img)) 
-        cv.imshow(window_name,horizontal_stack)       
-#
-#
-##########End RunCannyTuningWindow
 
 
 #This is a pipeline that applies dilate, gaussian blur, then a canny filter to output edges.
@@ -246,8 +129,6 @@ def FindLines(edge_img, probabilistic=False):
 
     return lines
 
-#
-
 # Take HoughLines and eliminate unlikely candidates. Then group using kmeans and output as np array
 def FilterForTrackLaneLines(lines, probabilistic=False):
 
@@ -273,7 +154,6 @@ def FilterForTrackLaneLines(lines, probabilistic=False):
 
     else:
         matrix_shape = (lines.shape[0],lines.shape[2])
-        #print (lines.reshape(matrix_shape))
         clustering_lines = lines.reshape(matrix_shape)
 
     #Step 2 - Eliminate lines that are unlikely to be track lane lines
@@ -330,10 +210,10 @@ def FilterForTrackLaneLines(lines, probabilistic=False):
 
     return best_lines
 
-#make sure that any lines in given input, reach from the top of the image to bottom (within img dimensions)
-#Input - prediction_lines - List of Yintercept/PolarLines
+# make sure that any lines in given input, reach from the top of the image to bottom (within img dimensions)
+# Input - prediction_lines - List of Yintercept/PolarLines
 #   image_shape - shape of image to check dimensions of (rows,columns)
-#Output - returns list of lines that fit within dimensions while spanning top to bot
+# Output - returns list of lines that fit within dimensions while spanning top to bot
 def FilterForTopToBotLines(prediction_lines,image_shape):
     output = []
     left = 0
@@ -350,14 +230,6 @@ def FilterForTopToBotLines(prediction_lines,image_shape):
     return output
 
 #Predict the x position corresponding to y for each line, then take the middle of those two
-"""
-def PredictLinesCenterX(y,line1,line2):
-    point1 = (line1.predict_x(y),y)
-    point2 = (line2.predict_x(y),y)
-
-    center_point = FindCenter(point1,point2)
-    return center_point
-"""
 def PredictLinesCenterX(y,prediction_lines):
     x_sum = 0
     for line in prediction_lines:
@@ -386,11 +258,11 @@ def ConvertToSlopeIntercept(line_coords):
     return slope_intercept
 
 
-#Draw lines on image. Probabilistic tells us whether HoughLines or HoughLinesP was used to generate lines
+# Draw lines on image. Probabilistic tells us whether HoughLines or HoughLinesP was used to generate lines
 # image - image to draw lines in
 # lines - array of lines. output of Houghlines(P). Either np.array of (rho,theta) or np.array of (pt1.x,pt1.y,pt2.x,pt2.y)
 # probabilistic - if true, lines are in point form
-def DrawLines2(img,lines,probabilistic):
+def DrawLines(img,lines,probabilistic):
     red = [0,0,255]
     width = 3
 
@@ -451,30 +323,26 @@ def FindAndGroupLines(test_img, probabilistic = False):
 
     #Step 2 - Find all Lines within image
     lines = FindLines(edges,probabilistic)
-    #print("lines")
-    #print(lines)
 
     #Step 3 - Eliminate non-track lines, and then group to find most likely line
     #TODO: How to handle if camera FOV is large and sees more than 1 track lane? - bin by distance 2 center?
     best_lines = FilterForTrackLaneLines(lines, probabilistic)
-    #print("best lines size", len(best_lines))
-    #print(best_lines)
+
     #convert to classes for ease of calculating x/y from line format
     prediction_lines = []
     if probabilistic:
         for i, line in enumerate(best_lines):
             prediction_lines.append(YInterceptLine(best_lines[i,0],best_lines[i,1]))
-        #line1 = YInterceptLine(best_lines[0,0],best_lines[0,1])
-        #line2 = YInterceptLine(best_lines[1,0],best_lines[1,1])        
     else:
         for i, line in enumerate(best_lines):
             prediction_lines.append(PolarLine(best_lines[i,0],best_lines[i,1]))
-        #line1 = PolarLine(best_lines[0,0],best_lines[0,1])
-        #line2 = PolarLine(best_lines[1,0],best_lines[1,1])
 
-    #Step 3.5 - Another elimination step. Check that all best_lines touch top and bottom of picture
+    #draw lines on img for visualization
     for line in prediction_lines:
         line.draw(test_img)
+
+    #Step 3.5 - Another elimination step. Check that all best_lines touch top and bottom of picture
+    # --- this ended up filtering out some lines we want. may revisit later
     #prediction_lines = FilterForTopToBotLines(prediction_lines,test_img.shape)
     #prediction_lines = [line1]
     return prediction_lines
@@ -492,7 +360,7 @@ def LaneCenterFinder(test_img, prediction_lines):
     #Draw output
     #For testing purposes
     cv.circle(test_img, center_point, 3, blue, thickness=3, lineType=8, shift=0)
-    #DrawLines2(test_img, lines,probabilistic)
+    #DrawLines(test_img, lines,probabilistic)
     #cv.imwrite(output_folder + "line_img2.jpg",test_img)
 
     #Print output
@@ -502,11 +370,19 @@ def LaneCenterFinder(test_img, prediction_lines):
 
     return center_point
     
-def play_video_with_line_detection(video_file):
+def windows_mp4_video_writer(filename,frame_size,fps=24):
+    fourcc = cv.VideoWriter_fourcc(*'MP4V')
+    return cv.VideoWriter(filename,fourcc,fps,frame_size)
+
+def play_video_with_line_detection(video_file,write_video=False):
     video_player = VideoPlayer.VideoPlayer(video_file)
 
     ret, next_frame = video_player.next_frame()
     quit = False
+    if(write_video):
+        w = 320
+        h = 240
+        video_out = windows_mp4_video_writer('processed_video.avi', (w,h), 26)
     while (ret == True) and (quit == False):
         ##PROCESS FRAME##
         #Current filter pipeline designed for 320x240, have to downsample mannually (future config camera)
@@ -519,54 +395,30 @@ def play_video_with_line_detection(video_file):
         #cv.imshow('frame',next_frame)
         quit = video_player.show_frame(downsampled_orig)
         ret, next_frame = video_player.next_frame()
-        
-        #print next_frame.shape
 
-#def play_video_frame_by_frame(video_file):
+        if write_video:
+            video_out.write(downsampled_orig)
+
+    if write_video:
+        video_out.release()
 
 if __name__ == "__main__":
-    #RunCannyTuningWindow(img_gray)
-    """#For 1920x1080 fullscale image
-    edges = CannyFilter(img_gray)
-    
-    #Line detection and drawing
-    line_img = np.copy(img)
-    lines = FindLines(edges)
-    #DrawLines(line_img,lines)
-    DrawLinesThetaRho(line_img,lines)
-    cv.imwrite(output_folder + "line_img.jpg",line_img)
-    """
+
+    input_filename = 'InputImages/low_res_pic_14.jpg'
+    img = cv.imread(input_filename)
+    img_gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
 
     timec1 = time.clock()
     timet1 = time.time()
-    #timec1 = time.clock()
 
-    #Current filter pipeline designed for 320x240, have to downsample mannually (future config camera)
+    #Current filter pipeline designed for 320x240, have to downsample mannually stills (video camera configured)
     downsampled_orig = cv.pyrDown(src=img)
     img_gray = cv.pyrDown(src=img_gray, dst=img_gray ) #defaults to half size
 
-    """
-    edges = FilterPipeline(img_gray)
-
-    #Line detection and drawing
-    line_img = np.copy(downsampled_orig)
-    lines = FindLines(edges)
-    #DrawLines(line_img,lines)
-    DrawLinesThetaRho(line_img,lines)
-    cv.imwrite(output_folder + "line_img.jpg",line_img)
-
-    time.sleep(1)
-
     timec2 = time.clock()
     timet2 = time.time()
-    #timec2 = time.clock()
+    #print(timet2-timet1,timec2-timec1)
 
-    print(time.time(),time.clock())
-    print(timet2-timet1,timec2-timec1)
-    """
-
-    print("----------Testing Refactor--------")
-    
     #Verify shape
     #downsampled_orig = img
     if ((downsampled_orig.shape[0]!=240) or  (downsampled_orig.shape[1] != 320) ):
@@ -578,7 +430,8 @@ if __name__ == "__main__":
     LaneCenterFinder(downsampled_orig,best_lines)
 
     print("---Video Playback---")
-    play_video_with_line_detection('InputImages/TrackDC_Intercepting_Lines.h264')
+    #play_video_with_line_detection('InputImages/TrackDC_Intercepting_Lines.h264')
+    play_video_with_line_detection('TrackDC_Video_3.h264')
 
 
 

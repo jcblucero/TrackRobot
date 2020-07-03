@@ -83,7 +83,9 @@ def LateralPIDControl( measured_point, image_dimensions, current_duty_cycle, thr
     #Simulator tried 0.15 for 20.0 PWM @ Halfspeed
     # and 0.6 for 16.5 @ halfspeed
     # Assuming linear equation y=mx+b: m=-0.1285, b=2.72 
-    #Kp = -0.1285 * throttle_pwm + 2.72
+    Kp = -0.1285 * throttle_pwm + 2.72
+    Kd = 0
+    Ki = 0
 
     #16.5, 0.43
     #17.0, 0.33
@@ -110,25 +112,20 @@ def LateralPIDControl( measured_point, image_dimensions, current_duty_cycle, thr
     Kd = 0.18
     Ki = 0.0
     """
+    """
     #17.0 - GOOD w/ 3 delay
     if(PID_count) == 1:
         Kp = 0.25
         Kd = 0.20
         Ki = 0.0
-        
-    #17.0 - GOOD w/ 10 delay
-    else:
-        Kp = 0.07
-        Kd = 0.05
-        Ki = 0.0
-    
+    """ 
     #17.5 - w/ 3 delay
     """
     Kp = 0.20
     Kd = 0.16
     Ki = 0.0
     """
-    print("Kp,Kd,Ki",Kp,Kd,Ki)
+    #print("Kp,Kd,Ki",Kp,Kd,Ki)
     #Get current error from process variable
     scaled_error = CalculateScaledTrajectoryError(measured_point,image_dimensions)
     #calculate deriv/integral
