@@ -61,12 +61,14 @@ class ScanDelegate(btle.DefaultDelegate):
 
 class NotificationDelegate(btle.DefaultDelegate):
 
-    def __init__(self):
+    def __init__(self, notificationCallback):
         btle.DefaultDelegate.__init__(self)
+        self.notificationCallback = notificationCallback
 
     def handleNotification(self, cHandle, data):
         #cHandle is handle to gatt characteristic which is sending notification
         #data is bytes value containing char data. struct.unpack
+        self.notificationCallback(data)
         pass
         
 
@@ -80,9 +82,9 @@ class BlePidProfile:
         self.kp_value = kp
         self.ki_value = ki
         self.kd_value = kd
-        self.start_stop = start_stop  #0 == stop, 1 ==start
+        self.start_stop_value = start_stop  #0 == stop, 1 ==start
 
-    #Converts floats byte data transmitted from PID service to float value
+    #Converts int byte data transmitted from PID service to float value
     # Input - byte array from PID service
     # Output - float
     def UnpackFloat(self, float_bytes):
@@ -98,16 +100,20 @@ print("ki ",ki_characteristic.read())
 
 
     #Call this whenever a notification is received
-    def ReceiveNotification(self):
+    def ReceiveNotification(self, data):
         self.throttle_value = self.UnpackFloat(self.throttle_characteristic.read())
         self.kp_value = self.UnpackFloat(self.kp_characteristic.read())
         self.ki_value = self.UnpackFloat(self.ki_characteristic.read())
         self.kd_value = self.UnpackFloat(self.kd_characteristic.read())
-        #TODO: start stop char
+        self.start_stop_value = struct.unpack('!i',self.start_stop_char.read())
+        print(data)
+        
+    def WaitForNotification(self,timeout=None)
+        self.periph.waitForNotifications(timeout)
 
     #scan time in seconds
     #connects to PID profile if found
-    #returns true if found, false otherwise
+    #returns true if found and connected, false otherwise
     def ScanForPidService(self,time)
         self.devices = self.scanner.scan(time)
         self.pid_found = False
@@ -115,8 +121,10 @@ print("ki ",ki_characteristic.read())
             if( is_device_pidtuner(device) ):
                 print("Connecting to " + device.addr)
                 self.periph = btle.Peripheral(device)
+                self.notification_delegate =  NotificationDelegate( self.ReceiveNotification )
+                self.periph.setDelegate( self.notification_delegate )
                 self.pid_found = True
-                self.connected = True
+             
 
             try:
                 self.pid_service = self.periph.getServiceByUUID(PID_UUID)
@@ -132,14 +140,26 @@ print("ki ",ki_characteristic.read())
                 self.cccd_handle = self.start_stop_char.getHandle()+1
                 notification_enable_data = b"\x01\x00"
                 self.periph.writeCharacteristic(self.cccd_handle,notification_enable_data,withResponse=True)
+                self.connected = True
  
                 
 
             except Exception as inst:
                 print(inst)
 
+        return self.connected
+
+
+def PidTest():
+    pid_profile = BlePidProfile()
+    pid_profile.ScanForPidService()
+    pid_profile.WaitForNotification()
+    exit(0)
         
 if __name__ == "__main__":
+
+    PidTest()
+
     scanner = btle.Scanner().withDelegate(ScanDelegate())
     devices = scanner.scan(5.0)
 
