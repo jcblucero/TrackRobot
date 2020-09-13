@@ -69,6 +69,75 @@ class NotificationDelegate(btle.DefaultDelegate):
         #data is bytes value containing char data. struct.unpack
         pass
         
+
+class BlePidProfile:
+
+    def __init__(self,throttle=15.0, kp=0.6, ki=0.0, kd=0.15, start_stop=0):
+        self.scanner = btle.Scanner()#.withDelegate(ScaneDelegate())
+        self.connected = False
+        self.pid_found = False
+        self.throttle_value = throttle
+        self.kp_value = kp
+        self.ki_value = ki
+        self.kd_value = kd
+        self.start_stop = start_stop  #0 == stop, 1 ==start
+
+    #Converts floats byte data transmitted from PID service to float value
+    # Input - byte array from PID service
+    # Output - float
+    def UnpackFloat(self, float_bytes):
+print("ki ",ki_characteristic.read())
+            print(struct.unpack('!i',ki_characteristic.read()))
+        #!i = big endian 4 byte float
+        # values sent were multiplied by 1000 since kotlin doesn't support float conversion to bytes
+        # now we divide by 1000 to convert back
+        value = struct.unpack('!i',float_bytes)
+        final_value = value / 1000 
+
+        return final_value
+
+
+    #Call this whenever a notification is received
+    def ReceiveNotification(self):
+        self.throttle_value = self.UnpackFloat(self.throttle_characteristic.read())
+        self.kp_value = self.UnpackFloat(self.kp_characteristic.read())
+        self.ki_value = self.UnpackFloat(self.ki_characteristic.read())
+        self.kd_value = self.UnpackFloat(self.kd_characteristic.read())
+        #TODO: start stop char
+
+    #scan time in seconds
+    #connects to PID profile if found
+    #returns true if found, false otherwise
+    def ScanForPidService(self,time)
+        self.devices = self.scanner.scan(time)
+        self.pid_found = False
+        for device in devices:
+            if( is_device_pidtuner(device) ):
+                print("Connecting to " + device.addr)
+                self.periph = btle.Peripheral(device)
+                self.pid_found = True
+                self.connected = True
+
+            try:
+                self.pid_service = self.periph.getServiceByUUID(PID_UUID)
+            
+                self.throttle_characteristic = pid_service.getCharacteristics(THROTTLE_UUID)[0]
+                self.kp_characteristic = pid_service.getCharacteristics(KP_UUID)[0]
+                self.ki_characteristic = pid_service.getCharacteristics(KI_UUID)[0]
+                self.kd_characteristic = pid_service.getCharacteristics(KD_UUID)[0]
+                self.start_stop_char = pid_service.getCharacteristics(START_STOP_UUID)[0]
+
+
+                #Descriptors not implemented in bluepy library, so no way to driectly get descriptor. Must get char descriptor and assume cccd is +1 from there
+                self.cccd_handle = self.start_stop_char.getHandle()+1
+                notification_enable_data = b"\x01\x00"
+                self.periph.writeCharacteristic(self.cccd_handle,notification_enable_data,withResponse=True)
+ 
+                
+
+            except Exception as inst:
+                print(inst)
+
         
 if __name__ == "__main__":
     scanner = btle.Scanner().withDelegate(ScanDelegate())
@@ -119,7 +188,22 @@ if __name__ == "__main__":
 
             print("ki ",ki_characteristic.read())
             print(struct.unpack('!i',ki_characteristic.read()))
-            
+
+
+            for descriptor in pid_service.getDescriptors():
+                print(descriptor)
+        
+            #this is making assumption that last descriptor offered by pid is cccd
+            #cccd = pid_service.getDescriptors()[-1]
+            #Descriptors not implemented in bluepy library, so no way to driectly get descriptor. Must get char descriptor and assume cccd is +1 from there
+            cccd_handle = start_stop_char.getHandle()+1
+            notification_enable_data = b"\x01\x00"
+            periph.writeCharacteristic(cccd_handle,notification_enable_data,withResponse=True)
+            print("waiting...")
+            if periph.waitForNotifications(4.0):
+                print("Notification")
+                #continue
+    
         except Exception as inst:
             print(inst)
             #print("Error finding {}".format(PID_UUID))
