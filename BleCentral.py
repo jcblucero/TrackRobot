@@ -68,9 +68,8 @@ class NotificationDelegate(btle.DefaultDelegate):
     def handleNotification(self, cHandle, data):
         #cHandle is handle to gatt characteristic which is sending notification
         #data is bytes value containing char data. struct.unpack
-        #self.notificationCallback(data)
         print("NOTIFIED")
-        
+        self.notificationCallback(data)
 
 class BlePidProfile:
 
@@ -91,7 +90,7 @@ class BlePidProfile:
         #!i = big endian 4 byte float
         # values sent were multiplied by 1000 since kotlin doesn't support float conversion to bytes
         # now we divide by 1000 to convert back
-        value = struct.unpack('!i',float_bytes)
+        value = struct.unpack('!i',float_bytes)[0]
         final_value = value / 1000 
 
         return final_value
@@ -105,8 +104,10 @@ class BlePidProfile:
         self.ki_value = self.UnpackFloat(self.ki_characteristic.read())
         self.kd_value = self.UnpackFloat(self.kd_characteristic.read())
         self.start_stop_value = struct.unpack('!i',self.start_stop_char.read())
-        print(data)
-        
+
+        print(self.start_stop_value, struct.unpack('!i',data))
+
+
     def WaitForNotification(self,timeout=None):
         self.periph.waitForNotifications(timeout)
 
@@ -122,11 +123,16 @@ class BlePidProfile:
                 self.periph = btle.Peripheral(device)
                 self.notification_delegate =  NotificationDelegate( self.ReceiveNotification )
                 self.periph.setDelegate( self.notification_delegate )
+
+                #self.periph.setDelegate( NotificationDelegate( PidTest ) )
                 self.pid_found = True
              
         if(self.pid_found==True):
             try:
                 print(self.periph)
+                #Some sort of bug in bluepy
+                #have to call getServices/getCharacterstics before it will get responses from service...
+                self.services = self.periph.getServices()
                 self.pid_service = self.periph.getServiceByUUID(PID_UUID)
             
                 self.throttle_characteristic = self.pid_service.getCharacteristics(THROTTLE_UUID)[0]
@@ -134,14 +140,19 @@ class BlePidProfile:
                 self.ki_characteristic = self.pid_service.getCharacteristics(KI_UUID)[0]
                 self.kd_characteristic = self.pid_service.getCharacteristics(KD_UUID)[0]
                 self.start_stop_char = self.pid_service.getCharacteristics(START_STOP_UUID)[0]
-                print(self.start_stop_char)
+                #print(self.start_stop_char)
 
                 #Descriptors not implemented in bluepy library, so no way to driectly get descriptor. Must get char descriptor and assume cccd is +1 from there
+                #print( (self.kp_characteristic).read() )
+                #print(self.start_stop_char.read())
+                #print(struct.unpack('!i',self.start_stop_char.read()))
+
                 self.cccd_handle = self.start_stop_char.getHandle()+1
-                notification_enable_data = b"\x01\x00"
-                self.periph.writeCharacteristic(self.cccd_handle,notification_enable_data,withResponse=True)
+                self.notification_enable_data = b"\x01\x00"
+                #print(self.cccd_handle)
+                self.periph.writeCharacteristic(self.cccd_handle,self.notification_enable_data,withResponse=True)
                 self.connected = True
- 
+                print("Done getting characteristics and notifications enabled") 
                 #self.periph.           
 
             except Exception as inst:
@@ -149,10 +160,9 @@ class BlePidProfile:
 
         return self.connected
 
-
 def PidTest():
     pid_profile = BlePidProfile()
-    if pid_profile.ScanForPidService(2.0):
+    if pid_profile.ScanForPidService(5.0):
         print("connected to service")
     if pid_profile.WaitForNotification(4.0):
         print("notified")
@@ -162,6 +172,7 @@ def PidTest():
 if __name__ == "__main__":
 
     PidTest()
+    #ScanForPidService(3.0)
     scanner = btle.Scanner().withDelegate(ScanDelegate())
     devices = scanner.scan(5.0)
 
@@ -172,6 +183,7 @@ if __name__ == "__main__":
         if is_device_pidtuner(device):
             print("Connecting to " + device.addr)
             periph = btle.Peripheral( device )
+            periph.setDelegate( NotificationDelegate( PidTest ) )
             print(periph.getServices())
             pid_found = True
             break
@@ -220,6 +232,7 @@ if __name__ == "__main__":
             #Descriptors not implemented in bluepy library, so no way to driectly get descriptor. Must get char descriptor and assume cccd is +1 from there
             cccd_handle = start_stop_char.getHandle()+1
             notification_enable_data = b"\x01\x00"
+            
             periph.writeCharacteristic(cccd_handle,notification_enable_data,withResponse=True)
             print("waiting...")
             if periph.waitForNotifications(4.0):
