@@ -115,6 +115,7 @@ def main_loop(step_count = 100):
     #Timing and loop
     timec1 = time.clock()
     timet1 = time.time()
+    timep1 = time.process_time()
     for i in range(step_count):
         if keypressed == 'q':
             break
@@ -123,16 +124,22 @@ def main_loop(step_count = 100):
         #keypressed = cv.waitKey(50)
         #print(keypressed)
         #time.sleep(1)
+        
+        timet1 = time.time()
         RobotCamera.camera.wait_recording()
         my_image = camera_buffer.read()
 
         command_robot(my_image,lateral_pwm)
+        timet2 = time.time()
+        print("Time: {}".format(timet2-timet1)) 
         #video_writer.write(my_image)        
         
     timec2 = time.clock()
     timet2 = time.time()
+    timep2 = time.process_time()
     #print("time.time",time.time(),time.clock())
     print("time.clock", timec2-timec1, "time.time",timet2-timet1)
+    print("process time",timep2-timep1)
 
     #Cleanup Phase
     #video_writer.release()
@@ -216,8 +223,8 @@ def test_loop():
 if __name__ == "__main__":
     time.sleep(1)
     servo_motor.Init()
-    #main_loop(1000)
+    main_loop(1000)
     #single_run()
-    test_loop()
+    #test_loop()
     servo_motor.DeInit()
 

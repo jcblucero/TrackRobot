@@ -91,25 +91,40 @@ class BlePidProfile:
         # values sent were multiplied by 1000 since kotlin doesn't support float conversion to bytes
         # now we divide by 1000 to convert back
         value = struct.unpack('!i',float_bytes)[0]
-        final_value = value / 1000 
+        final_value = value / 1000.0
 
         return final_value
+
+    def RequestAllData(self):
+        self.throttle_value = self.UnpackFloat(self.throttle_characteristic.read())
+        self.kp_value = self.UnpackFloat(self.kp_characteristic.read())
+        self.ki_value = self.UnpackFloat(self.ki_characteristic.read())
+        self.kd_value = self.UnpackFloat(self.kd_characteristic.read())
+        self.start_stop_value = struct.unpack('!i',self.start_stop_char.read())[0]
+        return (self.throttle_value,self.kp_value,self.ki_value,
+                self.kd_value,self.start_stop_value)     
+
 
 
     #Call this whenever a notification is received
     def ReceiveNotification(self, data):
         print("receive notification")
+        self.start_stop_value = struct.unpack('!i',data)[0]
         self.throttle_value = self.UnpackFloat(self.throttle_characteristic.read())
         self.kp_value = self.UnpackFloat(self.kp_characteristic.read())
         self.ki_value = self.UnpackFloat(self.ki_characteristic.read())
         self.kd_value = self.UnpackFloat(self.kd_characteristic.read())
-        self.start_stop_value = struct.unpack('!i',self.start_stop_char.read())
-
-        print(self.start_stop_value, struct.unpack('!i',data))
+        #self.start_stop_value = struct.unpack('!i',self.start_stop_char.read())
+       
+        #print(self.start_stop_value, struct.unpack('!i',data))
 
 
     def WaitForNotification(self,timeout=None):
         self.periph.waitForNotifications(timeout)
+
+    def RequestStartStopChar(self):
+        value = struct.unpack('!i',self.start_stop_char.read())[0]
+        return value
 
     #scan time in seconds
     #connects to PID profile if found
@@ -166,6 +181,25 @@ def PidTest():
         print("connected to service")
     if pid_profile.WaitForNotification(4.0):
         print("notified")
+    print("sleeping...")
+    print(pid_profile.throttle_value)
+    print(pid_profile.start_stop_value)
+    while(pid_profile.start_stop_value==1):
+        print("Checking btle")
+        start = time.time()
+        #value = pid_profile.RequestStartStopChar()
+        value = pid_profile.RequestAllData()
+        end = time.time()
+        print(value)
+        print("Reading Time {}".format(end-start))
+        #print(value,pid_profile.start_stop_value) 
+        #for i in range(1000):
+        #    print("Not Checking btle {}".format(i))
+        
+
+
+    print(pid_profile.throttle_value)
+    print(pid_profile.start_stop_value)
     #time.sleep(4)
     exit(0)
         
