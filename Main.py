@@ -102,8 +102,10 @@ def main_loop(step_count = 100):
     #cv.namedWindow(window_name)
 
     camera_buffer = RobotCamera.CameraBuffer()
-    RobotCamera.camera.start_recording(camera_buffer, 'bgr', resize=(320,240))
-    RobotCamera.camera.start_recording('TrackDC_Video_{}.h264'.format(main_loop_count), splitter_port=2)
+
+    RobotCamera.camera.start_recording(camera_buffer, 'bgr')#, resize=(320,240))
+    #RobotCamera.camera.start_recording(camera_buffer, 'bgr', resize=(320,240))
+    #RobotCamera.camera.start_recording('TrackDC_Video_{}.h264'.format(main_loop_count), splitter_port=2)
     #my_image = np.ones( (240,320), dtype=np.uint8)
     keypressed = None
     #count = 100
@@ -128,10 +130,13 @@ def main_loop(step_count = 100):
         timet1 = time.time()
         RobotCamera.camera.wait_recording()
         my_image = camera_buffer.read()
-
-        command_robot(my_image,lateral_pwm)
         timet2 = time.time()
-        print("Time: {}".format(timet2-timet1)) 
+        
+        command_robot(my_image,lateral_pwm)
+        timet3 = time.time()
+        #print("Time: {}".format(timet2-timet1))
+        print("Camera capture time: {}".format(timet2-timet1))
+        print("Processing time: {}".format(timet3-timet2)) 
         #video_writer.write(my_image)        
         
     timec2 = time.clock()
@@ -144,7 +149,7 @@ def main_loop(step_count = 100):
     #Cleanup Phase
     #video_writer.release()
     RobotCamera.camera.stop_recording()
-    RobotCamera.camera.stop_recording(splitter_port=2)
+    #RobotCamera.camera.stop_recording(splitter_port=2)
     throttle_pwm.SetDutyCycle(throttle_pwm.NUETRAL)
     lateral_pwm.SetDutyCycle(lateral_pwm.NUETRAL)
     #servo_motor.DeInit()
@@ -223,7 +228,7 @@ def test_loop():
 if __name__ == "__main__":
     time.sleep(1)
     servo_motor.Init()
-    main_loop(1000)
+    main_loop(100)
     #single_run()
     #test_loop()
     servo_motor.DeInit()

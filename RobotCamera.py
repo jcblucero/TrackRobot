@@ -16,8 +16,8 @@ import picamera
 
 camera = picamera.PiCamera(
     sensor_mode=4,
-    #resolution='320x240',
-    resolution='640x480',
+    resolution='320x240',
+    #resolution='640x480',
     framerate=40)
 
 #Using as reference: https://raspberrypi.stackexchange.com/questions/58871/pi-camera-v2-fast-full-sensor-capture-mode-with-downsampling
