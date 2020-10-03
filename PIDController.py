@@ -69,6 +69,10 @@ def clip_pwm(pwm):
 PID_count = 0
 PID_prev_error = 0
 PID_cumulative_error = 0
+
+Kp = 0.5
+Kd = 0.0
+Ki = 0.0
 def LateralPIDControl( measured_point, image_dimensions, current_duty_cycle, throttle_pwm):
 
     global PID_count
@@ -83,9 +87,9 @@ def LateralPIDControl( measured_point, image_dimensions, current_duty_cycle, thr
     #Simulator tried 0.15 for 20.0 PWM @ Halfspeed
     # and 0.6 for 16.5 @ halfspeed
     # Assuming linear equation y=mx+b: m=-0.1285, b=2.72 
-    Kp = -0.1285 * throttle_pwm + 2.72
+    """USE THIS FOR GENERIC TESTING Kp = -0.1285 * throttle_pwm + 2.72
     Kd = 0
-    Ki = 0
+    Ki = 0"""
 
     #16.5, 0.43
     #17.0, 0.33
