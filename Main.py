@@ -9,6 +9,8 @@ import RobotCamera
 import LineDetector
 import PIDController
 import servo_motor
+from BleCentral import BlePidProfile
+from bluepy.btle import BTLEDisconnectError
 #TODO: Servo motors
 
 THROTTLE_GPIO_PIN = 18
@@ -119,24 +121,24 @@ def main_loop(step_count = 100):
     timet1 = time.time()
     timep1 = time.process_time()
     for i in range(step_count):
-        if keypressed == 'q':
-            break
+        #if keypressed == 'q':
+        #    break
         #my_image = camera_buffer.read()
         #cv.imshow(window_name,my_image)
         #keypressed = cv.waitKey(50)
         #print(keypressed)
         #time.sleep(1)
         
-        timet1 = time.time()
+        #timet1 = time.time()
         RobotCamera.camera.wait_recording()
         my_image = camera_buffer.read()
-        timet2 = time.time()
+        #timet2 = time.time()
         
         command_robot(my_image,lateral_pwm)
-        timet3 = time.time()
+        #timet3 = time.time()
         #print("Time: {}".format(timet2-timet1))
-        print("Camera capture time: {}".format(timet2-timet1))
-        print("Processing time: {}".format(timet3-timet2)) 
+        #print("Camera capture time: {}".format(timet2-timet1))
+        #print("Processing time: {}".format(timet3-timet2)) 
         #video_writer.write(my_image)        
         
     timec2 = time.clock()
@@ -224,12 +226,76 @@ def test_loop():
 
             main_loop(step_count)
 
+#This loops indefinitely
+# 1 - wait for edge to signal test start -- REMOVED, keeping line until confirmed TODO: confirm
+# 2 - connect to phone over ble and wait for start signal
+# 3 - Receive data from phone, pid values/start signal
+# 4 - execute main_loop x times
+# 5 - go back to waiting for start signal from phone
+def ble_loop():
+    SIGNAL_PIN = 21
+    servo_motor.pi.set_mode(SIGNAL_PIN, servo_motor.pigpio.INPUT)
+    servo_motor.pi.set_pull_up_down(SIGNAL_PIN,servo_motor.pigpio.PUD_DOWN)
+
+    global THROTTLE_SPEED
+
+    test_loop_i = 0
+    step_count = 100
+    start_stop_value = 0
+
+    #Outer loop - just scan for peripheral until found
+    while True:
+        ####Dont think i actually have to wait for edge
+        #   loop will continually scan if no connection found
+        #   stays in inner loop until connection 30s with no notification
+        #print("Waiting for edge")
+        #servo_motor.pi.wait_for_edge(SIGNAL_PIN,servo_motor.pigpio.RISING_EDGE,10.0)
+
+        #Have to put in try/catch to get disconnnecterror
+        try:
+            pid_profile = BlePidProfile()
+            print("Scanning for advertiser...")
+            connected = pid_profile.ScanForPidService(5)
+            start_stop_value = 0
+
+            #go back to waiting for edge signal if we did not connect for some reason
+            if not connected:
+                print("No advertising detected...")
+                continue
+
+            #Inner BLE loop, this will be broken out of if no notification in too long
+            while True:
+                print("Waiting for notification")
+                if pid_profile.WaitForNotification(30):
+                    THROTTLE_SPEED = pid_profile.throttle_value
+                    PIDController.Kp = pid_profile.kp_value
+                    PIDController.Ki = pid_profile.ki_value
+                    PIDController.Kd = pid_profile.kd_value
+                    start_stop_value = pid_profile.start_stop_value
+                    print ("[throttle,kp,ki,kd,start/stop = {},{},{},{}]".format(THROTTLE_SPEED,
+                        pid_profile.kp_value,pid_profile.ki_value,pid_profile.kd_value,pid_profile.start_stop_value))
+                else:
+                    print("No start stop notification, go back to waiting for edge signal")
+                    pid_profile.periph.disconnect()
+                    break
+
+                #Wait until told to start
+                #if start_stop_value == 0:
+                #    print("Start stop == 0, going back to waiting for edge")
+                #    continue
+                if start_stop_value == 1:
+                    main_loop(step_count)
+            
+        except BTLEDisconnectError as inst:
+            print(inst)
+
 
 if __name__ == "__main__":
     time.sleep(1)
     servo_motor.Init()
-    main_loop(100)
+    #main_loop(100)
     #single_run()
     #test_loop()
+    ble_loop()
     servo_motor.DeInit()
 
