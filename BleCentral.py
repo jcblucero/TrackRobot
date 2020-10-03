@@ -6,6 +6,7 @@ See https://elinux.org/RPi_Bluetooth_LE for info on raspberrypi
 """
 
 from bluepy import btle
+#from bluepy.btle import BTLEDisconnectError
 import struct
 import time
 import keyboard
@@ -120,7 +121,7 @@ class BlePidProfile:
 
 
     def WaitForNotification(self,timeout=None):
-        self.periph.waitForNotifications(timeout)
+        return self.periph.waitForNotifications(timeout)
 
     def RequestStartStopChar(self):
         value = struct.unpack('!i',self.start_stop_char.read())[0]
